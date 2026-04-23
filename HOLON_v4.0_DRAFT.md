@@ -276,6 +276,394 @@ Relays store and sync data. Clients subscribe to what they need.
 
 ---
 
+# DISCOVERY
+
+**How do people find each other?**
+
+---
+
+## 7. Discovery Mechanisms
+
+Discovery happens at multiple levels:
+
+| Level | Method | Example |
+|-------|--------|---------|
+| **Direct** | ID/handle lookup | @alice → ent:alice |
+| **Social** | Graph traversal | "People you might know" |
+| **Content** | Search/hashtags | #rust → people posting about Rust |
+| **Context** | Group membership | Members of AI-club |
+| **External** | Verification | alice.com proves ownership of ent:alice |
+
+---
+
+## 8. Handle Resolution
+
+Users have human-readable handles.
+
+### Handle Format
+
+```
+@alice              → local handle (relay-specific)
+@alice@relay.com    → fully qualified handle
+```
+
+### Resolution Query
+
+```json
+{
+  "op": "resolve",
+  "handle": "alice"
+}
+```
+
+### Response
+
+```json
+{
+  "op": "resolved",
+  "handle": "alice",
+  "entity_id": "ent:abc123",
+  "keys": {
+    "sign": "ed25519:..."
+  }
+}
+```
+
+### Handle Uniqueness
+
+- **Per-relay:** Each relay enforces uniqueness for handles it hosts
+- **No global registry:** alice@relay1.com ≠ alice@relay2.com
+- **Verification:** External proofs establish canonical identity
+
+---
+
+## 9. Search
+
+Relays provide search over public content.
+
+### Search Query
+
+```json
+{
+  "op": "search",
+  "query": "rust programming",
+  "types": ["entity", "content"],
+  "limit": 20
+}
+```
+
+### Response
+
+```json
+{
+  "op": "search_results",
+  "results": [
+    {"type": "entity", "id": "ent:rustacean", "score": 0.95},
+    {"type": "content", "id": "cnt:abc123", "score": 0.87},
+    ...
+  ]
+}
+```
+
+### Search Scope
+
+| Scope | Searchable |
+|-------|------------|
+| Entities | name, bio, handle |
+| Content | text, titles (public only) |
+| Groups | name, description |
+
+### Privacy
+
+- **Unlisted entities:** Set `"discoverable": false` to exclude from search
+- **Private content:** Never searchable
+- **Followers-only:** Searchable by followers
+
+---
+
+## 10. Social Graph Discovery
+
+Find people through existing connections.
+
+### Follows of Follows
+
+"People followed by people you follow"
+
+```json
+{
+  "op": "discover",
+  "method": "follows_of_follows",
+  "entity": "ent:me",
+  "limit": 20
+}
+```
+
+Returns entities with high overlap with your follows.
+
+### Similar Followers
+
+"People who follow similar accounts"
+
+```json
+{
+  "op": "discover",
+  "method": "similar_followers",
+  "entity": "ent:me",
+  "limit": 20
+}
+```
+
+### Mutual Connections
+
+"People with mutual follows"
+
+```json
+{
+  "op": "discover",
+  "method": "mutuals",
+  "entity": "ent:me"
+}
+```
+
+### Implementation Note
+
+These queries can be expensive. Relays may:
+- Cache results
+- Limit frequency
+- Require payment for heavy queries
+
+---
+
+## 11. Context Discovery
+
+Find people through shared contexts.
+
+### Group Members
+
+```json
+{
+  "op": "members",
+  "group": "ent:ai-club",
+  "limit": 100
+}
+```
+
+Returns members unless the group is private.
+
+### Active Participants
+
+"Who's posting in this context?"
+
+```json
+{
+  "op": "discover",
+  "method": "active_in_context",
+  "context": "ent:ai-club",
+  "period": "7d",
+  "limit": 20
+}
+```
+
+### Context Suggestions
+
+"Groups you might like based on who you follow"
+
+```json
+{
+  "op": "discover",
+  "method": "suggested_contexts",
+  "entity": "ent:me"
+}
+```
+
+---
+
+## 12. External Verification
+
+Prove you control an external identity.
+
+### Domain Verification
+
+Prove you control `alice.com`:
+
+1. Add DNS TXT record: `holon=ent:abc123`
+2. Or serve `https://alice.com/.well-known/holon`:
+   ```json
+   {
+     "entity": "ent:abc123",
+     "sig": "ed25519:..."
+   }
+   ```
+
+3. Create verification link:
+   ```json
+   {
+     "type": "link",
+     "kind": "verify",
+     "source": "ent:abc123",
+     "target": "dns:alice.com",
+     "proof": "dns_txt"
+   }
+   ```
+
+### Social Verification
+
+Prove you control @alice on Twitter:
+
+1. Post a tweet containing your entity ID
+2. Create verification link with proof URL:
+   ```json
+   {
+     "type": "link",
+     "kind": "verify",
+     "source": "ent:abc123",
+     "target": "twitter:alice",
+     "proof": "https://twitter.com/alice/status/123..."
+   }
+   ```
+
+### Verification Display
+
+Clients show verified external identities:
+
+```
+Alice ✓
+@alice@relay.com
+Verified: alice.com, @alice (Twitter)
+```
+
+---
+
+## 13. Discovery Views
+
+Views can be used for discovery.
+
+### "Rising Stars" View
+
+```json
+{
+  "id": "view:rising-stars",
+  "type": "view",
+  "name": "Rising Stars",
+  "source": {"type": "all_entities", "kind": "user"},
+  "filter": [
+    {"field": "account_age_days", "op": "lt", "value": 30},
+    {"field": "follower_growth_7d", "op": "gt", "value": 100}
+  ],
+  "rank": {
+    "formula": "follower_growth_7d / log(followers + 1)"
+  },
+  "limit": 20
+}
+```
+
+### "Experts in X" View
+
+```json
+{
+  "id": "view:rust-experts",
+  "type": "view",
+  "name": "Rust Experts",
+  "source": {"type": "all_entities", "kind": "user"},
+  "filter": [
+    {"field": "bio", "op": "contains", "value": "rust"},
+    {"field": "content_count", "op": "gt", "value": 50}
+  ],
+  "rank": {
+    "formula": "avg_reactions_in_context('rust')"
+  },
+  "limit": 50
+}
+```
+
+### Discovery Feed
+
+A view can combine content and entity discovery:
+
+```json
+{
+  "id": "view:discover-feed",
+  "type": "view",
+  "name": "Discover",
+  "source": {
+    "union": [
+      {"type": "trending_content"},
+      {"type": "suggested_follows"},
+      {"type": "active_groups"}
+    ]
+  },
+  "interleave": true
+}
+```
+
+---
+
+## 14. Contact Import
+
+Bootstrap from existing social graphs.
+
+### Import Flow
+
+1. User provides contact list (phone/email hashes)
+2. Relay matches against verified users
+3. Returns matched entities
+
+### Privacy-Preserving Lookup
+
+```json
+{
+  "op": "contact_lookup",
+  "hashes": [
+    "sha256:abc123...",  // hashed email
+    "sha256:def456..."   // hashed phone
+  ]
+}
+```
+
+### Response
+
+```json
+{
+  "op": "contact_matches",
+  "matches": [
+    {"hash": "sha256:abc123...", "entity": "ent:alice"}
+  ]
+}
+```
+
+### Requirements
+
+- Users must opt-in to contact matching
+- Only hashes transmitted (not raw contacts)
+- Relays should rate-limit to prevent enumeration
+
+---
+
+## 15. QR Code Discovery
+
+For in-person discovery.
+
+### QR Code Contents
+
+```
+holon://ent:abc123@relay.example.com
+```
+
+### Follow Flow
+
+1. Scan QR code
+2. Client resolves entity from relay
+3. Shows profile with follow button
+
+### Works Offline
+
+QR code contains enough info to follow later:
+- Entity ID
+- Relay URL
+- Optionally: public key (for verification)
+
+---
+
 # ALGORITHM LAYER
 
 **The innovation.** Every algorithm is transparent, verifiable, and forkable.
