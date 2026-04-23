@@ -1,9 +1,10 @@
 # HOLON Protocol Simulator Dependencies
-# Core dependencies are Python stdlib only!
 
-# Optional: For visualization (uncomment if needed)
-# matplotlib>=3.5.0
-# pandas>=1.4.0
+# Visualization
+matplotlib>=3.5.0
 
-# Optional: For progress bars (uncomment if needed)
-# tqdm>=4.62.0
+# Data analysis
+pandas>=1.4.0
+
+# Progress bars
+tqdm>=4.62.0

@@ -1,0 +1,29 @@
+
+============================================================
+SIMULATION RESULTS: Key Rotation Stress
+============================================================
+
+Storage:
+  Entities:     352
+  Content:      36
+  Links:        753
+  Total:        1,141
+  Size:         0.26 MB
+
+Link breakdown:
+  key_rotation: 391
+  react: 336
+  follow: 20
+  membership: 6
+
+View execution:
+  Total executions: 25
+  Avg time:         0.01 ms
+  P50 time:         0.01 ms
+  P95 time:         0.04 ms
+
+Key Rotation:
+  Total rotations:  391
+  Users rotated:    229
+
+============================================================

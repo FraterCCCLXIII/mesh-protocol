@@ -13,11 +13,18 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from core import (
-    Storage, View, ViewEngine,
-    generate_entity_id, generate_view_id
+    Storage, View, ViewEngine, Link, LinkKind,
+    generate_entity_id, generate_view_id, generate_link_id
 )
 from agents import AgentManager, AgentType
 from scenarios import ScenarioType, get_scenario, list_scenarios, HolonConfig
+
+# Try to import network simulation (optional)
+try:
+    from network import NetworkSimulator, NetworkConfig, create_network_simulation
+    NETWORK_AVAILABLE = True
+except ImportError:
+    NETWORK_AVAILABLE = False
 
 
 class Simulator:
@@ -25,13 +32,32 @@ class Simulator:
 
     def __init__(self, scenario_type: ScenarioType, seed: int | None = None):
         self.scenario = get_scenario(scenario_type)
-        self.storage = Storage()
+
+        # Network simulation (if configured)
+        self.network: NetworkSimulator | None = None
+        if NETWORK_AVAILABLE and self.scenario.num_relays > 1:
+            config = NetworkConfig(
+                min_latency_ms=max(5, self.scenario.network_latency_ms * 0.5),
+                max_latency_ms=max(20, self.scenario.network_latency_ms * 1.5),
+                packet_loss_rate=self.scenario.packet_loss_rate,
+                relay_failure_rate=self.scenario.relay_failure_rate,
+            )
+            self.network = NetworkSimulator(config)
+            for i in range(self.scenario.num_relays):
+                self.network.add_relay(f"relay-{i+1}", is_primary=(i == 0))
+            self.storage = self.network.get_primary_storage()
+        else:
+            self.storage = Storage()
+
         self.agent_manager = AgentManager(self.storage)
         self.view_engine = ViewEngine(self.storage)
 
         # Metrics collection
         self.metrics_history: list[dict] = []
         self.view_executions: list[dict] = []
+        self.network_metrics: list[dict] = []
+        self.key_rotation_events: list[dict] = []
+        self.group_key_events: list[dict] = []
 
         # Random seed for reproducibility
         if seed is not None:
@@ -43,6 +69,10 @@ class Simulator:
 
         # Views created
         self.views: list[View] = []
+
+        # Key rotation tracking
+        self.last_key_rotation = self.current_time
+        self.key_versions: dict[str, int] = {}  # entity_id -> version
 
     def setup(self):
         """Set up the simulation environment."""
@@ -144,6 +174,26 @@ class Simulator:
                     self._inject_spam_wave()
                     self._spam_injected = True
 
+            # Key rotation (if configured)
+            if self.scenario.key_rotation_interval:
+                if self.current_time - self.last_key_rotation >= self.scenario.key_rotation_interval:
+                    self._perform_key_rotations()
+                    self.last_key_rotation = self.current_time
+
+            # Member churn (for group encryption testing)
+            if self.scenario.member_churn_rate > 0:
+                self._simulate_member_churn()
+
+            # Network simulation
+            if self.network:
+                self.network.simulate_tick(self.current_time, self.scenario.tick_interval)
+                if tick_count % 10 == 0:
+                    net_metrics = self.network.collect_metrics(
+                        self.current_time,
+                        (self.current_time - self.start_time).total_seconds()
+                    )
+                    self.network_metrics.append(net_metrics)
+
             # Collect metrics periodically
             if tick_count % 10 == 0:
                 self._collect_metrics()
@@ -160,11 +210,115 @@ class Simulator:
             progress = int((elapsed.total_seconds() / self.scenario.duration.total_seconds()) * 100)
             if progress >= last_progress + progress_interval:
                 metrics = self.storage.get_metrics()
+                extra_info = ""
+                if self.network:
+                    online = sum(1 for r in self.network.relays.values() if r.is_online)
+                    extra_info = f" | Relays: {online}/{len(self.network.relays)}"
                 print(f"  {progress}% complete | Objects: {metrics['total_objects']:,} | "
-                      f"Size: {metrics['total_size_mb']:.2f} MB")
+                      f"Size: {metrics['total_size_mb']:.2f} MB{extra_info}")
                 last_progress = progress
 
         print(f"\nSimulation complete!")
+
+    def _perform_key_rotations(self):
+        """Perform key rotations for a subset of users."""
+        # Rotate keys for 5% of users each interval
+        users = list(self.agent_manager.agents.keys())
+        to_rotate = random.sample(users, max(1, len(users) // 20))
+
+        for user_id in to_rotate:
+            version = self.key_versions.get(user_id, 1)
+            new_version = version + 1
+            self.key_versions[user_id] = new_version
+
+            # Create key rotation link
+            link = Link(
+                id=generate_link_id(),
+                kind=LinkKind.CREDENTIAL,
+                source=user_id,
+                target=user_id,
+                created=self.current_time,
+                data={
+                    "subkind": "key_rotation",
+                    "old_version": version,
+                    "new_version": new_version,
+                },
+            )
+            self.storage.create_link(link)
+
+            self.key_rotation_events.append({
+                "timestamp": self.current_time.isoformat(),
+                "user": user_id,
+                "old_version": version,
+                "new_version": new_version,
+            })
+
+    def _simulate_member_churn(self):
+        """Simulate members joining and leaving groups."""
+        groups = [
+            e for e in self.agent_manager.all_entity_ids
+            if self.storage.get_entity(e) and
+            self.storage.get_entity(e).kind.value == "group"
+        ]
+
+        if not groups:
+            return
+
+        for group in groups:
+            # Get current members
+            members = [
+                a for a in self.agent_manager.agents.values()
+                if group in a.joined_groups
+            ]
+
+            # Some members leave
+            num_leave = int(len(members) * self.scenario.member_churn_rate * random.random())
+            for agent in random.sample(members, min(num_leave, len(members))):
+                if group in agent.joined_groups:
+                    agent.joined_groups.remove(group)
+                    # Create leave link
+                    link = Link(
+                        id=generate_link_id(),
+                        kind=LinkKind.CREDENTIAL,
+                        source=agent.entity_id,
+                        target=group,
+                        created=self.current_time,
+                        data={"subkind": "membership", "tombstone": True},
+                        tombstone=True,
+                    )
+                    self.storage.create_link(link)
+
+                    self.group_key_events.append({
+                        "timestamp": self.current_time.isoformat(),
+                        "action": "leave",
+                        "group": group,
+                        "member": agent.entity_id,
+                    })
+
+            # Some new members join
+            non_members = [
+                a for a in self.agent_manager.agents.values()
+                if group not in a.joined_groups
+            ]
+            num_join = int(len(non_members) * self.scenario.member_churn_rate * random.random())
+            for agent in random.sample(non_members, min(num_join, len(non_members))):
+                agent.joined_groups.append(group)
+                link = Link(
+                    id=generate_link_id(),
+                    kind=LinkKind.CREDENTIAL,
+                    source=agent.entity_id,
+                    target=group,
+                    created=self.current_time,
+                    data={"subkind": "membership", "role": "member"},
+                )
+                self.storage.create_link(link)
+
+                self.group_key_events.append({
+                    "timestamp": self.current_time.isoformat(),
+                    "action": "join",
+                    "group": group,
+                    "member": agent.entity_id,
+                })
 
     def _inject_viral_content(self):
         """Inject a piece of viral content that everyone reacts to."""
@@ -265,14 +419,41 @@ class Simulator:
         else:
             view_stats = {}
 
-        return {
+        results = {
             "scenario": self.scenario.name,
             "duration": str(self.scenario.duration),
             "final_metrics": final_metrics,
             "view_stats": view_stats,
             "metrics_history": self.metrics_history,
-            "view_executions": self.view_executions[-100:],  # Last 100 executions
+            "view_executions": self.view_executions[-100:],
         }
+
+        # Add network metrics if available
+        if self.network:
+            results["network_metrics"] = self.network_metrics
+            results["relay_stats"] = self.network.get_relay_stats()
+            results["client_stats"] = self.network.get_client_stats()
+
+        # Add key rotation stats if available
+        if self.key_rotation_events:
+            results["key_rotation_events"] = self.key_rotation_events[-100:]
+            results["key_rotation_stats"] = {
+                "total_rotations": len(self.key_rotation_events),
+                "unique_users_rotated": len(set(e["user"] for e in self.key_rotation_events)),
+            }
+
+        # Add group encryption stats if available
+        if self.group_key_events:
+            results["group_key_events"] = self.group_key_events[-100:]
+            joins = len([e for e in self.group_key_events if e["action"] == "join"])
+            leaves = len([e for e in self.group_key_events if e["action"] == "leave"])
+            results["group_churn_stats"] = {
+                "total_joins": joins,
+                "total_leaves": leaves,
+                "net_change": joins - leaves,
+            }
+
+        return results
 
     def print_summary(self):
         """Print a summary of results."""
@@ -301,6 +482,33 @@ class Simulator:
             print(f"  Avg time:         {v['avg_time_ms']:.2f} ms")
             print(f"  P50 time:         {v['p50_time_ms']:.2f} ms")
             print(f"  P95 time:         {v['p95_time_ms']:.2f} ms")
+
+        # Network stats
+        if "relay_stats" in results:
+            r = results["relay_stats"]
+            print(f"\nNetwork (Multi-Relay):")
+            print(f"  Relays:           {len(r['relays'])}")
+            for relay in r["relays"]:
+                status = "✓" if relay["is_online"] else "✗"
+                print(f"    {relay['id']}: {status} | "
+                      f"recv: {relay['objects_received']:,} | "
+                      f"sent: {relay['objects_sent']:,} | "
+                      f"avg latency: {relay['avg_latency_ms']:.1f}ms")
+
+        # Key rotation stats
+        if "key_rotation_stats" in results:
+            k = results["key_rotation_stats"]
+            print(f"\nKey Rotation:")
+            print(f"  Total rotations:  {k['total_rotations']:,}")
+            print(f"  Users rotated:    {k['unique_users_rotated']:,}")
+
+        # Group churn stats
+        if "group_churn_stats" in results:
+            g = results["group_churn_stats"]
+            print(f"\nGroup Membership Churn:")
+            print(f"  Total joins:      {g['total_joins']:,}")
+            print(f"  Total leaves:     {g['total_leaves']:,}")
+            print(f"  Net change:       {g['net_change']:+,}")
 
         print("\n" + "=" * 60)
 

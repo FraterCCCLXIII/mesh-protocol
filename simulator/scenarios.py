@@ -19,6 +19,10 @@ class ScenarioType(Enum):
     VIRAL_CONTENT = "viral_content"
     NESTED_HOLONS = "nested_holons"
     VIEW_STRESS = "view_stress"
+    KEY_ROTATION_STRESS = "key_rotation_stress"
+    GROUP_ENCRYPTION = "group_encryption"
+    MULTI_RELAY = "multi_relay"
+    CONSISTENCY_TEST = "consistency_test"
 
 
 @dataclass
@@ -39,8 +43,17 @@ class ScenarioConfig:
     holons: list[HolonConfig]
     tick_interval: timedelta = timedelta(minutes=1)
     views_to_create: int = 5
-    viral_content_at: timedelta | None = None  # Inject viral content at this time
-    spam_wave_at: timedelta | None = None  # Inject spam wave at this time
+    viral_content_at: timedelta | None = None
+    spam_wave_at: timedelta | None = None
+    # Key rotation settings
+    key_rotation_interval: timedelta | None = None
+    # Group encryption settings
+    member_churn_rate: float = 0.0
+    # Network simulation settings
+    num_relays: int = 1
+    network_latency_ms: float = 0.0
+    packet_loss_rate: float = 0.0
+    relay_failure_rate: float = 0.0
 
 
 # =============================================================================
@@ -52,7 +65,6 @@ SCENARIOS = {
         name="Small Network",
         description="A small network of 100 users with 5 groups. Tests basic functionality.",
         duration=timedelta(hours=1),
-        tick_interval=timedelta(seconds=30),
         users={
             AgentType.LURKER: 50,
             AgentType.CASUAL: 35,
@@ -67,13 +79,13 @@ SCENARIOS = {
             HolonConfig(name="Rust", parent="Tech"),
             HolonConfig(name="Python", parent="Tech"),
         ],
+        tick_interval=timedelta(seconds=30),
     ),
 
     ScenarioType.MEDIUM_NETWORK: ScenarioConfig(
         name="Medium Network",
         description="A medium network of 10,000 users. Tests storage growth and query performance.",
         duration=timedelta(hours=24),
-        tick_interval=timedelta(minutes=1),
         users={
             AgentType.LURKER: 5000,
             AgentType.CASUAL: 3500,
@@ -88,13 +100,13 @@ SCENARIOS = {
             HolonConfig(name="Gaming", children=5),
             HolonConfig(name="Science", children=5),
         ],
+        tick_interval=timedelta(minutes=1),
     ),
 
     ScenarioType.LARGE_NETWORK: ScenarioConfig(
         name="Large Network",
         description="A large network of 100,000 users. Tests scalability limits.",
         duration=timedelta(days=7),
-        tick_interval=timedelta(minutes=5),
         users={
             AgentType.LURKER: 50000,
             AgentType.CASUAL: 35000,
@@ -105,23 +117,24 @@ SCENARIOS = {
         holons=[
             HolonConfig(name=f"Category{i}", children=10) for i in range(50)
         ],
+        tick_interval=timedelta(minutes=5),
     ),
 
     ScenarioType.SPAM_ATTACK: ScenarioConfig(
         name="Spam Attack",
         description="Simulates a spam attack to test moderation and filtering.",
         duration=timedelta(hours=1),
-        tick_interval=timedelta(seconds=10),
         users={
             AgentType.CASUAL: 500,
             AgentType.ACTIVE: 200,
-            AgentType.SPAMMER: 50,  # 10% spammers
+            AgentType.SPAMMER: 50,
             AgentType.MODERATOR: 10,
         },
         holons=[
             HolonConfig(name="Main"),
             HolonConfig(name="Verified", parent="Main"),
         ],
+        tick_interval=timedelta(seconds=10),
         spam_wave_at=timedelta(minutes=20),
     ),
 
@@ -129,7 +142,6 @@ SCENARIOS = {
         name="Viral Content",
         description="Tests behavior when content goes viral (many reactions to one post).",
         duration=timedelta(hours=1),
-        tick_interval=timedelta(seconds=15),
         users={
             AgentType.LURKER: 5000,
             AgentType.CASUAL: 3000,
@@ -139,6 +151,7 @@ SCENARIOS = {
         holons=[
             HolonConfig(name="Main"),
         ],
+        tick_interval=timedelta(seconds=15),
         viral_content_at=timedelta(minutes=10),
     ),
 
@@ -146,7 +159,6 @@ SCENARIOS = {
         name="Nested Holons",
         description="Tests deep nesting of holons (Structure Layer stress test).",
         duration=timedelta(hours=6),
-        tick_interval=timedelta(minutes=1),
         users={
             AgentType.CASUAL: 500,
             AgentType.ACTIVE: 300,
@@ -154,7 +166,6 @@ SCENARIOS = {
             AgentType.MODERATOR: 20,
         },
         holons=[
-            # Create a deep hierarchy
             HolonConfig(name="Level1"),
             HolonConfig(name="Level1-A", parent="Level1"),
             HolonConfig(name="Level1-B", parent="Level1"),
@@ -166,13 +177,13 @@ SCENARIOS = {
             HolonConfig(name="Level4-Deep", parent="Level3-A1a"),
             HolonConfig(name="Level5-Deepest", parent="Level4-Deep"),
         ],
+        tick_interval=timedelta(minutes=1),
     ),
 
     ScenarioType.VIEW_STRESS: ScenarioConfig(
         name="View Stress Test",
         description="Tests View Layer with many complex views and verifications.",
         duration=timedelta(hours=1),
-        tick_interval=timedelta(seconds=30),
         users={
             AgentType.CASUAL: 5000,
             AgentType.ACTIVE: 3000,
@@ -181,7 +192,77 @@ SCENARIOS = {
         holons=[
             HolonConfig(name="Main", children=10),
         ],
-        views_to_create=50,  # Create 50 different views
+        tick_interval=timedelta(seconds=30),
+        views_to_create=50,
+    ),
+
+    ScenarioType.KEY_ROTATION_STRESS: ScenarioConfig(
+        name="Key Rotation Stress",
+        description="Tests frequent key rotations and their impact on verification.",
+        duration=timedelta(hours=2),
+        users={
+            AgentType.CASUAL: 200,
+            AgentType.ACTIVE: 100,
+            AgentType.POWER_USER: 50,
+        },
+        holons=[
+            HolonConfig(name="Main"),
+            HolonConfig(name="HighSecurity", parent="Main"),
+        ],
+        tick_interval=timedelta(seconds=30),
+        key_rotation_interval=timedelta(minutes=5),  # Rotate keys every 5 minutes
+    ),
+
+    ScenarioType.GROUP_ENCRYPTION: ScenarioConfig(
+        name="Group Encryption Stress",
+        description="Tests group key management with high member churn.",
+        duration=timedelta(hours=2),
+        users={
+            AgentType.CASUAL: 500,
+            AgentType.ACTIVE: 300,
+            AgentType.POWER_USER: 100,
+        },
+        holons=[
+            HolonConfig(name="PublicGroup"),
+            HolonConfig(name="PrivateGroup"),
+            HolonConfig(name="HighChurnGroup"),
+        ],
+        tick_interval=timedelta(seconds=20),
+        member_churn_rate=0.1,  # 10% of members join/leave per tick
+    ),
+
+    ScenarioType.MULTI_RELAY: ScenarioConfig(
+        name="Multi-Relay Network",
+        description="Tests sync behavior across multiple relays with network delays.",
+        duration=timedelta(hours=1),
+        users={
+            AgentType.CASUAL: 500,
+            AgentType.ACTIVE: 300,
+            AgentType.POWER_USER: 100,
+        },
+        holons=[
+            HolonConfig(name="Main", children=5),
+        ],
+        tick_interval=timedelta(seconds=15),
+        num_relays=5,
+        network_latency_ms=50,
+        packet_loss_rate=0.02,
+    ),
+
+    ScenarioType.CONSISTENCY_TEST: ScenarioConfig(
+        name="Consistency Test",
+        description="Tests eventual consistency across relays under various conditions.",
+        duration=timedelta(hours=1),
+        users={
+            AgentType.ACTIVE: 200,
+            AgentType.POWER_USER: 50,
+        },
+        holons=[
+            HolonConfig(name="Main"),
+        ],
+        tick_interval=timedelta(seconds=10),
+        num_relays=3,
+        relay_failure_rate=0.05,  # 5% failure rate
     ),
 }
 

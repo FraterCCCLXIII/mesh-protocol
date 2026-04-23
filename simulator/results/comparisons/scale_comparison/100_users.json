@@ -1,0 +1,432 @@
+{
+  "scenario": "Small Network - 100 users",
+  "duration": "1:00:00",
+  "final_metrics": {
+    "entity_count": 105,
+    "content_count": 2,
+    "link_count": 14,
+    "view_count": 5,
+    "total_objects": 121,
+    "total_size_bytes": 27656,
+    "total_size_mb": 0.02637481689453125,
+    "sequence": 126,
+    "link_breakdown": {
+      "react": 13,
+      "follow": 1
+    }
+  },
+  "view_stats": {
+    "total_executions": 15,
+    "avg_time_ms": 0.01937548319498698,
+    "p50_time_ms": 0.0045299530029296875,
+    "p95_time_ms": 0.20051002502441406,
+    "p99_time_ms": 0.20051002502441406
+  },
+  "metrics_history": [
+    {
+      "entity_count": 105,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 105,
+      "total_size_bytes": 23754,
+      "total_size_mb": 0.022653579711914062,
+      "sequence": 110,
+      "link_breakdown": {},
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "elapsed_seconds": 0.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 105,
+      "total_size_bytes": 23754,
+      "total_size_mb": 0.022653579711914062,
+      "sequence": 110,
+      "link_breakdown": {},
+      "timestamp": "2026-04-23T21:46:22.791846",
+      "elapsed_seconds": 300.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 105,
+      "total_size_bytes": 23754,
+      "total_size_mb": 0.022653579711914062,
+      "sequence": 110,
+      "link_breakdown": {},
+      "timestamp": "2026-04-23T21:51:22.791846",
+      "elapsed_seconds": 600.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 105,
+      "total_size_bytes": 23754,
+      "total_size_mb": 0.022653579711914062,
+      "sequence": 110,
+      "link_breakdown": {},
+      "timestamp": "2026-04-23T21:56:22.791846",
+      "elapsed_seconds": 900.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 105,
+      "total_size_bytes": 23754,
+      "total_size_mb": 0.022653579711914062,
+      "sequence": 110,
+      "link_breakdown": {},
+      "timestamp": "2026-04-23T22:01:22.791846",
+      "elapsed_seconds": 1200.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 1,
+      "link_count": 2,
+      "view_count": 5,
+      "total_objects": 108,
+      "total_size_bytes": 24489,
+      "total_size_mb": 0.023354530334472656,
+      "sequence": 113,
+      "link_breakdown": {
+        "react": 1,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "elapsed_seconds": 1500.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 1,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 1,
+      "link_count": 3,
+      "view_count": 5,
+      "total_objects": 109,
+      "total_size_bytes": 24730,
+      "total_size_mb": 0.023584365844726562,
+      "sequence": 114,
+      "link_breakdown": {
+        "react": 2,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:11:22.791846",
+      "elapsed_seconds": 1800.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 1,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 1,
+      "link_count": 3,
+      "view_count": 5,
+      "total_objects": 109,
+      "total_size_bytes": 24730,
+      "total_size_mb": 0.023584365844726562,
+      "sequence": 114,
+      "link_breakdown": {
+        "react": 2,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:16:22.791846",
+      "elapsed_seconds": 2100.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 1,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 1,
+      "link_count": 4,
+      "view_count": 5,
+      "total_objects": 110,
+      "total_size_bytes": 24967,
+      "total_size_mb": 0.023810386657714844,
+      "sequence": 115,
+      "link_breakdown": {
+        "react": 3,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:21:22.791846",
+      "elapsed_seconds": 2400.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 1,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 2,
+      "link_count": 5,
+      "view_count": 5,
+      "total_objects": 112,
+      "total_size_bytes": 25520,
+      "total_size_mb": 0.0243377685546875,
+      "sequence": 117,
+      "link_breakdown": {
+        "react": 4,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:26:22.791846",
+      "elapsed_seconds": 2700.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 2,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 2,
+      "link_count": 12,
+      "view_count": 5,
+      "total_objects": 119,
+      "total_size_bytes": 27181,
+      "total_size_mb": 0.02592182159423828,
+      "sequence": 124,
+      "link_breakdown": {
+        "react": 11,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "elapsed_seconds": 3000.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 2,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 105,
+      "content_count": 2,
+      "link_count": 13,
+      "view_count": 5,
+      "total_objects": 120,
+      "total_size_bytes": 27419,
+      "total_size_mb": 0.02614879608154297,
+      "sequence": 125,
+      "link_breakdown": {
+        "react": 12,
+        "follow": 1
+      },
+      "timestamp": "2026-04-23T22:36:22.791846",
+      "elapsed_seconds": 3300.0,
+      "total_agents": 100,
+      "by_type": {
+        "lurker": 50,
+        "casual": 35,
+        "active": 10,
+        "power_user": 4,
+        "moderator": 1
+      },
+      "total_content": 2,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    }
+  ],
+  "view_executions": [
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.20051002502441406
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.011205673217773438
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0059604644775390625
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-23T21:41:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0152587890625
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0057220458984375
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-23T22:06:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.003814697265625
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0133514404296875
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0054836273193359375
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-23T22:31:22.791846",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    }
+  ],
+  "variation": {
+    "name": "100 users",
+    "users_multiplier": 1
+  }
+}
