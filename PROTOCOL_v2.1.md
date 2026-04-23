@@ -11,11 +11,15 @@ A minimal protocol for decentralized social applications — from blogs to learn
 ### From v2.0
 - **Added**: Key rotation with explicit deprecation (fixes custody shadow problem)
 - **Added**: `thread_root` field for efficient thread queries
-- **Added**: Historical access model for group encryption
+- **Added**: Group `history_policy`: `join_date_forward` (default) vs `full_access`
 - **Added**: Relay sequence numbers for sync (replaces timestamp-based)
+- **Added**: Multi-relay merge guidance (client deduplicates by object ID)
 - **Added**: Payment attestation pattern
 - **Added**: `_display` convention for schema fallback rendering
+- **Added**: `tombstones_all` for batch tombstoning
 - **Clarified**: Links are append-only with tombstones
+- **Clarified**: `context` vs `access` distinction
+- **Clarified**: Credential signing rule (third-party signed)
 - **Simplified**: Collapsed to 3 Content kinds and 3 Link kinds
 
 ---
@@ -136,6 +140,29 @@ Relationships between entities or content:
 | `credential` | `payment_attestation` | Proof of payment |
 | `credential` | `enrollment` | Enrolled in course |
 | `credential` | `certificate` | Completed course/achievement |
+
+### 1.5 The Signing Rule: Who Signs What
+
+**Critical distinction:**
+
+| Kind | Signed By | Examples |
+|------|-----------|----------|
+| `relationship` | Source entity | Follow, block, membership request |
+| `interaction` | Source entity | React, reply, bookmark, progress |
+| `credential` | Third party (NOT source) | Subscription, enrollment, certificate, payment attestation |
+
+**The rule:** If the link is an attestation from someone other than the source, it's a `credential`. If the source is making a claim about themselves, it's a `relationship` or `interaction`.
+
+**Examples:**
+- Alice follows Bob → `relationship` (Alice signs)
+- Alice likes a post → `interaction` (Alice signs)
+- Alice is subscribed to Newsletter → `credential` (payment attestor signs)
+- Alice enrolled in Course → `credential` (school signs)
+- Alice completed Course → `credential` (school signs the certificate)
+
+**Edge case:** Membership can be either:
+- `relationship` with subkind `membership_request` (Alice signs, requesting to join)
+- `credential` with subkind `membership` (admin signs, confirming membership)
 
 ---
 
@@ -274,11 +301,40 @@ Every content has an `access` field:
 3. For each recipient, wrap K with their X25519 public key
 4. Store wrapped keys in `wrapped_keys` map
 
-### 3.3 Group Encryption with Historical Access
+### 3.3 Group Encryption and History Policy
 
-**Problem:** New members need access to content posted before they joined.
+**The scalability problem:** Re-wrapping content keys for every new member is expensive at scale. A group with 10,000 posts and monthly joins means 10,000 re-wrap operations monthly.
 
-**Solution:** Per-content keys with group key wrapping.
+**Solution:** Groups choose a `history_policy`:
+
+```json
+{
+  "type": "entity",
+  "kind": "group",
+  "data": {
+    "history_policy": "join_date_forward",  // DEFAULT
+    ...
+  }
+}
+```
+
+| Policy | Behavior | Use Case |
+|--------|----------|----------|
+| `join_date_forward` | New members only see content posted AFTER they joined | Social communities, chat groups (default, scalable) |
+| `full_access` | New members can see ALL historical content | Knowledge bases, team workspaces (expensive, small groups) |
+
+#### 3.3.1 Join-Date-Forward (Default)
+
+When a new member joins:
+1. Admin creates new key package version including new member
+2. New content is encrypted to new group key
+3. Old content remains encrypted to old group keys (new member can't read)
+4. New member sees a "joined on [date]" marker in the timeline
+
+This is how Signal groups work. It's:
+- Scalable (no re-wrapping)
+- Privacy-preserving (new members don't see old conversations)
+- Simple to implement
 
 ```json
 {
@@ -287,15 +343,51 @@ Every content has an `access` field:
   "access": {"type": "group", "group": "ent:rust-devs"},
   "encrypted": {
     "ciphertext": "base64...",
-    "nonce": "base64...",
-    "algorithm": "xchacha20-poly1305",
-    "content_key_id": "ckey:cnt-abc123",
-    "group_key_version": 3
+    "group_key_version": 3  // Only members with v3+ key can decrypt
   }
 }
 ```
 
-**Group Key Package:**
+#### 3.3.2 Full Access (Opt-In)
+
+For groups that need historical access (team knowledge bases, etc.):
+
+```json
+{
+  "type": "entity",
+  "kind": "group",
+  "data": {
+    "history_policy": "full_access"
+  }
+}
+```
+
+When a new member joins:
+1. Admin creates new key package version (v4) including new member
+2. Admin (or key server) re-wraps historical content keys to v4
+3. New member can decrypt all historical content
+
+**Scaling considerations:**
+- Only use for small groups (<100 members, <1,000 posts)
+- Consider lazy re-wrapping (re-wrap on access, not on join)
+- Use a key server for large groups
+
+**Content Key Registry (for full_access groups):**
+
+```json
+{
+  "type": "content_key_registry",
+  "group": "ent:rust-devs",
+  "keys": {
+    "ckey:cnt-abc123": {
+      "wrapped_to_group_key_v3": "base64...",
+      "wrapped_to_group_key_v4": "base64..."
+    }
+  }
+}
+```
+
+#### 3.3.3 Group Key Package
 
 ```json
 {
@@ -310,28 +402,6 @@ Every content has an `access` field:
     "ent:carol": "base64..."
   },
   "sig": "ed25519:admin..."
-}
-```
-
-**When new member joins:**
-
-1. Admin creates new key package version (v4) including new member
-2. Admin (or key server) fetches all `content_key_id`s for group content
-3. Admin re-wraps each content key to the new group key
-4. New member can now decrypt all historical content
-
-**Content Key Registry:**
-
-```json
-{
-  "type": "content_key_registry",
-  "group": "ent:rust-devs",
-  "keys": {
-    "ckey:cnt-abc123": {
-      "wrapped_to_group_key_v3": "base64...",
-      "wrapped_to_group_key_v4": "base64..."
-    }
-  }
 }
 ```
 
@@ -516,23 +586,71 @@ Links are append-only. You cannot edit or delete a link. Instead, you publish a 
  "data": {"subkind": "unfollow", "tombstones": "lnk:123"}}
 ```
 
-### 6.3 Computing Current State
+### 6.3 Batch Tombstone Pattern
+
+For cases where you want to resolve ALL prior links of a subkind (not just a specific one):
+
+```json
+{
+  "type": "link",
+  "kind": "relationship",
+  "id": "lnk:789",
+  "source": "ent:alice",
+  "target": "ent:bob",
+  "data": {
+    "subkind": "unfollow",
+    "tombstones_all": "relationship/follow"
+  }
+}
+```
+
+**`tombstones_all` format:** `{kind}/{subkind}`
+
+This says: "Resolve ALL prior follow links between this source and target."
+
+**Benefits:**
+- Enables garbage collection (tombstoned links can be discarded)
+- Reduces link accumulation over time
+- Simplifies state computation (don't need to know specific link IDs)
+
+**Use cases:**
+- User unfollows after many follow/unfollow cycles
+- Clear all reactions of a type
+- Reset relationship state
+
+### 6.4 Computing Current State
 
 ```python
 def get_current_relationships(source, target):
     links = fetch_links(source=source, target=target, kind="relationship")
+    links = sorted(links, key=lambda l: l.created)  # Chronological order
     
     # Build tombstone set
     tombstoned = set()
+    tombstoned_all = {}  # {kind/subkind: timestamp}
+    
     for link in links:
         if "tombstones" in link.data:
             tombstoned.add(link.data["tombstones"])
+        if "tombstones_all" in link.data:
+            tombstoned_all[link.data["tombstones_all"]] = link.created
     
     # Return non-tombstoned links
-    return [l for l in links if l.id not in tombstoned]
+    result = []
+    for link in links:
+        # Skip if specifically tombstoned
+        if link.id in tombstoned:
+            continue
+        # Skip if batch-tombstoned (and created before the tombstone)
+        key = f"{link.kind}/{link.data.get('subkind', '')}"
+        if key in tombstoned_all and link.created < tombstoned_all[key]:
+            continue
+        result.append(link)
+    
+    return result
 ```
 
-### 6.4 Why Append-Only?
+### 6.5 Why Append-Only?
 
 1. **Audit trail**: Can always see history of relationship changes
 2. **Consistency**: No race conditions on updates
@@ -706,7 +824,9 @@ GET /content?author=ent:alice&after_seq=67890&limit=100
 3. **Efficient**: Single integer comparison, indexed lookup
 4. **Relay-local**: Each relay has its own sequence space
 
-### 8.4 Cross-Relay Sync
+### 8.4 Cross-Relay Sync and Merge Strategy
+
+**Key principle:** Sequence numbers are relay-local. Different relays assign different `seq` values to the same object.
 
 When syncing from multiple relays, track `last_seq` per relay:
 
@@ -718,6 +838,43 @@ When syncing from multiple relays, track `last_seq` per relay:
   }
 }
 ```
+
+**Client responsibilities:**
+
+1. **Maintain per-relay cursors**: Each relay has its own sequence space
+2. **Deduplicate by object ID**: Same object from different relays has same `id`
+3. **Merge streams**: Combine objects from multiple relays into unified view
+4. **Handle conflicts**: Same object may arrive with different `seq` from different relays (use object `id` as canonical identifier)
+
+**Example merge logic:**
+
+```python
+def sync_from_relays(relays, sync_state):
+    all_objects = {}
+    
+    for relay in relays:
+        last_seq = sync_state.get(relay, 0)
+        response = fetch(relay, after_seq=last_seq)
+        
+        for obj in response.items:
+            # Deduplicate by object ID
+            if obj.id not in all_objects:
+                all_objects[obj.id] = obj
+        
+        # Update per-relay cursor
+        sync_state[relay] = response.cursor
+    
+    return list(all_objects.values())
+```
+
+**Why relay-local sequences?**
+
+1. **Relay independence**: Relays don't need to coordinate
+2. **No global ordering**: There is no single "true" order of events across the network
+3. **Client choice**: Clients choose which relays to trust and how to merge
+4. **Partition tolerance**: Network splits don't break sync
+
+**Tradeoff:** Feeds are relay-relative. Different clients syncing from different relay sets may see different orderings. This is intentional — there's no global truth in a decentralized system.
 
 ### 8.5 Real-Time Subscriptions
 
@@ -817,6 +974,31 @@ When syncing from multiple relays, track `last_seq` per relay:
 ```
 
 The `context` field indicates where the content "lives." The `access` field controls who can read it.
+
+### 9.4 Context vs Access: When They Differ
+
+**`context`**: Where content belongs (its "home")
+**`access`**: Who can read it
+
+Usually they're the same, but they can differ:
+
+| context | access | Meaning |
+|---------|--------|---------|
+| `ent:group` | `{type: group, group: ent:group}` | Normal group post (most common) |
+| `ent:group` | `{type: public}` | Announcement: posted to group, visible to everyone |
+| `null` | `{type: group, group: ent:group}` | Personal post encrypted to group (sharing with specific audience) |
+| `null` | `{type: private, allow: [...]}` | DM to specific users |
+
+**Query implications:**
+
+- `GET /content?context=ent:group` → All posts "in" the group (regardless of access)
+- `GET /content?access.group=ent:group` → All posts readable by group members
+
+**Why separate?**
+
+1. **Announcements**: Post to your group feed but make it public for visibility
+2. **Cross-posting**: Same content in your feed AND a group
+3. **Selective sharing**: Personal content encrypted to a specific group's members
 
 ---
 
@@ -1024,7 +1206,54 @@ GET    /feed/explore                Discovery feed
 
 ---
 
-## 15. Summary
+## 15. Known Tradeoffs and Risks
+
+### 15.1 Sequence Numbers Are Relay-Local
+
+**Tradeoff:** No global ordering. Feeds are relay-relative.
+
+**Implication:** Different clients syncing from different relay sets may see different orderings. This is intentional — decentralized systems don't have global truth.
+
+**Mitigation:** Use `created` timestamp for display ordering. Use `seq` only for sync cursors.
+
+### 15.2 Group Key Management at Scale
+
+**Tradeoff:** `full_access` history policy is expensive for large groups.
+
+**Implication:** Re-wrapping content keys on every join doesn't scale past ~1,000 posts.
+
+**Mitigation:** Default to `join_date_forward`. Use `full_access` only for small teams/knowledge bases. Consider lazy re-wrapping or key servers for large groups.
+
+### 15.3 Link Explosion
+
+**Tradeoff:** Everything is a Link — follows, reactions, subscriptions, credentials, progress.
+
+**Implication:** Links will dominate storage. A user with 1,000 follows, 10,000 reactions, and 100 subscriptions has 11,100 links.
+
+**Mitigation:** 
+- Efficient indexing on (source, kind, subkind) and (target, kind, subkind)
+- `tombstones_all` for garbage collection
+- Consider link compaction in implementations
+
+### 15.4 Ambitious Scope
+
+**Tradeoff:** Protocol supports social, blogging, groups, messaging, payments, and LMS.
+
+**Implication:** Hard to optimize for everything. Each use case has different performance characteristics.
+
+**Mitigation:** The 3×3 model (3 primitives, 3 kinds each) provides a narrow foundation. Implementations can optimize for specific use cases while staying protocol-compliant.
+
+### 15.5 No Global Moderation
+
+**Tradeoff:** Moderation is relay-level and client-level, not protocol-level.
+
+**Implication:** Spam and abuse are handled differently by different relays. No protocol-level block list.
+
+**Mitigation:** This is intentional. Centralized moderation is a single point of failure/censorship. Trust networks and relay reputation emerge organically.
+
+---
+
+## 16. Summary
 
 **Three primitives:** Entity, Content, Link
 
@@ -1037,16 +1266,18 @@ GET    /feed/explore                Discovery feed
 - Email login → self-custody migration path
 - Key rotation with explicit deprecation
 - Encryption as access layer (public/private/group/paid)
-- Historical access for groups (new members see old content)
+- History policy for groups (`join_date_forward` default)
 - Payment attestation pattern
 - `_display` for schema fallback
-- Append-only links with tombstones
+- Append-only links with tombstones (including `tombstones_all`)
 - Relay sequence numbers for efficient sync
+- Explicit multi-relay merge strategy
 
 **What we got right:**
 - Simple enough to explain in 10 minutes
 - Powerful enough for blogs, social networks, groups, newsletters, LMS
 - Rigorous enough to actually implement
+- Honest about tradeoffs
 
 ---
 
