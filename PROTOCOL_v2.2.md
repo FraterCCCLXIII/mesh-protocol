@@ -11,13 +11,17 @@ A minimal protocol for decentralized social applications — from blogs to learn
 ### From v2.1
 - **Fixed**: Membership model — `membership_request` (relationship) vs `membership` (credential)
 - **Fixed**: Subscription moved from relationship to credential (was incorrectly listed)
-- **Fixed**: Tier key architecture fully specified
+- **Fixed**: Tier key architecture fully specified with API endpoints
+- **Fixed**: Key rotation signing rule explicitly documented as exception
+- **Fixed**: Payment attestor trust list added to publication entity (`trusted_payment_attestors`)
 - **Added**: Conflict resolution rules for multi-relay sync
 - **Added**: Self-attestation fallback for payment bootstrapping
 - **Added**: Entity versioning with explicit `version` field
+- **Added**: Tier key request endpoint (`POST /keys/tier/{pub}/{tier}/request`)
 - **Added**: Spam resistance recommendations
 - **Added**: Schema registry guidance
 - **Added**: Ordering fallback documentation
+- **Added**: Known Gaps section (§15.10) documenting unresolved issues
 - **Clarified**: Known limitations section expanded
 
 ### From v2.0 (in v2.1)
@@ -172,8 +176,14 @@ Relationships between entities or content:
 | `relationship` | Source entity | Follow, block, membership_request |
 | `interaction` | Source entity | React, reply, bookmark, progress |
 | `credential` | Third party (NOT source) | Membership, subscription, enrollment, certificate |
+| `credential` (key_rotation) | **EXCEPTION:** Old key holder | Key rotation (self-signed with old key) |
 
 **The rule:** If the link is an attestation from someone other than the source, it's a `credential`. If the source is making a claim about themselves, it's a `relationship` or `interaction`.
+
+**Special case — key_rotation:** This is the one credential where source = signer. The old key signs the rotation to prove possession. This is explicitly allowed because:
+1. Only the old key holder can authorize deprecating that key
+2. The signature proves continuity of identity
+3. No third party can attest to key ownership
 
 **Examples:**
 - Alice follows Bob → `relationship` (Alice signs)
@@ -183,10 +193,12 @@ Relationships between entities or content:
 - Alice is subscribed to Newsletter → `credential/subscription` (payment attestor signs)
 - Alice enrolled in Course → `credential/enrollment` (school signs)
 - Alice completed Course → `credential/certificate` (school signs)
+- Alice rotates her keys → `credential/key_rotation` (Alice's OLD key signs)
 
 **The test:** Ask "who is making the claim?"
 - If source claims something about themselves → relationship or interaction
 - If someone else attests something about source → credential
+- If source is rotating their own keys → credential/key_rotation (exception)
 
 ---
 
@@ -1246,6 +1258,34 @@ GET    /keys/group/{group_id}                    Get current group key package
 GET    /keys/group/{group_id}/history            Get all key package versions
 GET    /keys/content/{content_key_id}            Get wrapped content key
 POST   /keys/group/{group_id}/rekey              Trigger group rekey (admin only)
+
+# Tier keys (for paid content)
+GET    /keys/tier/{publication_id}/{tier}        Get tier key package (if authorized)
+POST   /keys/tier/{publication_id}/{tier}/request   Request tier key (with subscription credential)
+```
+
+**Tier key request flow:**
+
+```json
+// POST /keys/tier/ent:premium-news/premium/request
+// Body: subscription credential
+{
+  "credential": {
+    "type": "link",
+    "kind": "credential",
+    "source": "ent:subscriber",
+    "target": "ent:premium-news",
+    "data": {"subkind": "subscription", "tier": "premium", ...},
+    "sig": "..."
+  }
+}
+
+// Response: wrapped tier key
+{
+  "tier_key_wrapped": "base64...",  // Wrapped to subscriber's encryption key
+  "tier": "premium",
+  "version": 2
+}
 ```
 
 ### 10.5 Feeds
@@ -1351,17 +1391,22 @@ GET    /feed/explore                Discovery feed
 ### 13.3 Paid Newsletter
 
 ```json
-// Publication with tiers
+// Publication with tiers AND trusted attestors
 {"type": "entity", "kind": "org", "id": "ent:premium-news",
- "data": {"name": "Premium Newsletter", "tiers": [
-   {"id": "free", "price": 0},
-   {"id": "premium", "price": {"amount": 10, "currency": "USD", "period": "month"}}
- ]}}
+ "data": {
+   "name": "Premium Newsletter", 
+   "tiers": [
+     {"id": "free", "price": 0},
+     {"id": "premium", "price": {"amount": 10, "currency": "USD", "period": "month"}}
+   ],
+   "trusted_payment_attestors": ["ent:stripe-bridge", "ent:paypal-bridge"]
+ }}
 
 // Subscription (signed by payment attestor)
 {"type": "link", "kind": "credential", "source": "ent:bob", "target": "ent:premium-news",
- "data": {"subkind": "subscription", "tier": "premium", "expires": "2026-05-01T00:00:00Z"},
- "sig": "ed25519:attestor-key..."}
+ "data": {"subkind": "subscription", "tier": "premium", "expires": "2026-05-01T00:00:00Z",
+          "attestor": "ent:stripe-bridge", "attestation_type": "third_party"},
+ "sig": "ed25519:stripe-bridge-key..."}
 
 // Paid article
 {"type": "content", "kind": "post", "schema": "blog.article.v1",
@@ -1537,6 +1582,45 @@ GET    /feed/explore                Discovery feed
 
 **For v2.2:** This is out of scope. `_display` ensures graceful degradation. Schema registry is a v3 concern.
 
+### 15.10 Known Gaps Requiring Future Work
+
+The following gaps have been identified but require significant restructuring to address. They are documented here for transparency:
+
+**1. Sequence Numbers Are Not Author-Signed**
+
+`seq` is assigned by relays, not authors. This means:
+- Ordering is relay-controlled, not author-controlled
+- A malicious relay can manipulate perceived ordering
+- No cryptographic proof of ordering
+
+**Comparison:** Relay uses author-signed `prev` chains for verifiable ordering.
+
+**Impact:** Medium. Affects ordering integrity but not content integrity.
+
+**Future fix:** Add optional author-signed sequence or `prev` field for applications needing verifiable ordering.
+
+**2. No Moderation Primitives**
+
+The protocol has no labels, trust attestations, or flagging mechanism. The only moderation is:
+- Group roles (admin, mod)
+- Client-side blocking
+
+**Comparison:** Relay has a developed label system (§12).
+
+**Impact:** High for social network deployments. "Relay reputation emerges organically" is not a solution.
+
+**Future fix:** Add Label type and trust attestation primitives in v3.
+
+**3. Link Explosion Has No Protocol-Level Mitigation**
+
+Everything is a link (follows, reactions, subscriptions, progress). High-volume operations like reactions create storage pressure.
+
+**Comparison:** Relay separates durable log events from mutable state.
+
+**Impact:** Medium. Pushes problem to implementations.
+
+**Future fix:** Consider separating log events from state in v3, or adding aggregation primitives (reaction counts).
+
 ---
 
 ## 16. Summary
@@ -1573,6 +1657,9 @@ GET    /feed/explore                Discovery feed
 - Schema registry
 - Attestor discovery protocol
 - Trust/reputation system
+- Author-signed ordering (prev chains)
+- Moderation primitives (labels, trust attestations)
+- Log/state separation for link explosion
 
 ---
 
