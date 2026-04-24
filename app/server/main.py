@@ -568,13 +568,47 @@ class NodeInfo(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global storage
+    global storage, indexer
     storage = Storage(DB_PATH)
     await storage.initialize()
+    
+    # Add tables for indexer BEFORE initializing
+    await storage.db.executescript("""
+        CREATE TABLE IF NOT EXISTS entity_index (
+            entity_id TEXT PRIMARY KEY,
+            handle TEXT,
+            kind TEXT,
+            profile TEXT,
+            relay_urls TEXT,
+            home_relay TEXT,
+            discovered_at TEXT,
+            last_seen TEXT
+        );
+        CREATE TABLE IF NOT EXISTS relay_index (
+            url TEXT PRIMARY KEY,
+            node_id TEXT,
+            entity_count INTEGER,
+            last_crawled TEXT,
+            health_status TEXT,
+            features TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_entity_index_handle ON entity_index(handle);
+    """)
+    await storage.db.commit()
+    
+    # Initialize indexer
+    from discovery import init_indexer
+    indexer = await init_indexer(NODE_URL, storage.db)
+    
     print(f"[{NODE_ID}] Server started, database: {DB_PATH}")
+    print(f"[{NODE_ID}] Indexer initialized for {NODE_URL}")
     yield
     await storage.close()
     print(f"[{NODE_ID}] Server stopped")
+
+
+# Global indexer
+indexer = None
 
 
 app = FastAPI(
@@ -729,7 +763,13 @@ async def create_entity(req: EntityCreate):
     )
     await storage.append_log(event)
     
-    return {"id": entity_id, "handle": req.handle}
+    # Index the entity for discovery
+    if indexer:
+        entity_dict = entity.to_dict()
+        entity_dict["relay_hints"] = [NODE_URL]
+        indexer.index_entity(entity_dict, NODE_URL)
+    
+    return {"id": entity_id, "handle": req.handle, "relay_hints": [NODE_URL]}
 
 
 @app.get("/api/entities/{entity_id}")
@@ -738,7 +778,17 @@ async def get_entity(entity_id: str):
     entity = await storage.get_entity(entity_id)
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
-    return entity.to_dict()
+    
+    result = entity.to_dict()
+    # Add relay hints for discovery
+    result["relay_hints"] = [NODE_URL]
+    
+    # Add other known relays from indexer
+    if indexer and entity_id in indexer.entity_index:
+        indexed = indexer.entity_index[entity_id]
+        result["relay_hints"] = list(indexed.relay_urls)
+    
+    return result
 
 
 @app.get("/api/entities/by-handle/{handle}")
@@ -2081,6 +2131,388 @@ async def federation_import(req: dict):
         "content_imported": imported["content"],
         "from_node": remote_url,
     }
+
+
+@app.post("/api/federation/import/direct")
+async def federation_import_direct(req: dict):
+    """Directly import entities, groups, content, and links from provided data."""
+    imported = {"entities": 0, "groups": 0, "content": 0, "links": 0}
+    
+    # Import entities (users)
+    for ent in req.get("entities", []):
+        existing = await storage.get_entity(ent["id"])
+        if not existing:
+            try:
+                kind = ent.get("kind", "user")
+                now = datetime.utcnow().isoformat()
+                await storage.db.execute('''
+                    INSERT INTO entities (id, kind, public_key, encryption_key, handle, profile, created_at, updated_at, sig)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    ent["id"],
+                    kind,
+                    bytes.fromhex(ent.get("public_key", "00" * 32)) if ent.get("public_key") else b"\x00" * 32,
+                    bytes.fromhex(ent.get("encryption_key", "")) if ent.get("encryption_key") else None,
+                    ent.get("handle"),
+                    json.dumps(ent.get("profile", {})),
+                    ent.get("created_at", now),
+                    ent.get("updated_at", now),
+                    bytes.fromhex(ent.get("sig", "00" * 64)) if ent.get("sig") else b"\x00" * 64,
+                ))
+                await storage.db.commit()
+                imported["entities"] += 1
+            except Exception as ex:
+                print(f"[Federation] Failed to import entity {ent['id']}: {ex}")
+    
+    # Import groups
+    for grp in req.get("groups", []):
+        existing = await storage.get_entity(grp["id"])
+        if not existing:
+            try:
+                now = datetime.utcnow().isoformat()
+                await storage.db.execute('''
+                    INSERT INTO entities (id, kind, public_key, encryption_key, handle, profile, created_at, updated_at, sig)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    grp["id"],
+                    "group",
+                    bytes.fromhex(grp.get("public_key", "00" * 32)) if grp.get("public_key") else b"\x00" * 32,
+                    None,
+                    grp.get("handle"),
+                    json.dumps(grp.get("profile", {})),
+                    grp.get("created_at", now),
+                    grp.get("updated_at", now),
+                    bytes.fromhex(grp.get("sig", "00" * 64)) if grp.get("sig") else b"\x00" * 64,
+                ))
+                await storage.db.commit()
+                imported["groups"] += 1
+            except Exception as ex:
+                print(f"[Federation] Failed to import group {grp['id']}: {ex}")
+    
+    # Import content
+    for item in req.get("content", []):
+        existing = await storage.get_content(item["id"])
+        if not existing:
+            try:
+                now = datetime.utcnow().isoformat()
+                await storage.db.execute('''
+                    INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    item["id"],
+                    item.get("author"),
+                    item.get("kind", "post"),
+                    json.dumps(item.get("body", {})),
+                    item.get("reply_to"),
+                    item.get("created_at", now),
+                    item.get("access", "public"),
+                    0,
+                    None,
+                    bytes.fromhex(item.get("sig", "00" * 64)) if item.get("sig") else b"\x00" * 64,
+                ))
+                await storage.db.commit()
+                imported["content"] += 1
+            except Exception as ex:
+                print(f"[Federation] Failed to import content {item['id']}: {ex}")
+    
+    # Import links (follows, likes, etc.)
+    for link in req.get("links", []):
+        try:
+            # Check if link exists
+            existing = await storage.db.execute(
+                "SELECT id FROM links WHERE source = ? AND target = ? AND kind = ?",
+                (link.get("source"), link.get("target"), link.get("kind"))
+            )
+            if not await existing.fetchone():
+                link_id = link.get("id", f"lnk:{link.get('source', '')[:8]}:{link.get('kind', '')}:{link.get('target', '')[:8]}")
+                now = datetime.utcnow().isoformat()
+                await storage.db.execute('''
+                    INSERT INTO links (id, source, target, kind, created_at, sig)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    link_id,
+                    link.get("source"),
+                    link.get("target"),
+                    link.get("kind"),
+                    link.get("created_at", now),
+                    bytes.fromhex(link.get("sig", "00" * 64)) if link.get("sig") else b"\x00" * 64,
+                ))
+                await storage.db.commit()
+                imported["links"] += 1
+        except Exception as ex:
+            print(f"[Federation] Failed to import link: {ex}")
+    
+    return {
+        "status": "imported",
+        "entities": imported["entities"],
+        "groups": imported["groups"],
+        "content": imported["content"],
+        "links": imported["links"],
+    }
+
+
+@app.get("/api/federation/links")
+async def federation_get_links(limit: int = 100):
+    """Get all links for federation sync."""
+    cursor = await storage.db.execute(
+        "SELECT id, source, target, kind, created_at, sig FROM links ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    )
+    rows = await cursor.fetchall()
+    
+    links = []
+    for row in rows:
+        links.append({
+            "id": row[0],
+            "source": row[1],
+            "target": row[2],
+            "kind": row[3],
+            "created_at": row[4],
+            "sig": row[5].hex() if row[5] else None,
+        })
+    
+    return {"links": links}
+
+
+@app.get("/api/notifications")
+async def get_notifications(current_user: str = Depends(require_auth), limit: int = 50):
+    """Get notifications for the current user (likes, replies, follows on their content)."""
+    notifications = []
+    
+    # Get likes on user's content
+    cursor = await storage.db.execute('''
+        SELECT l.id, l.source, l.target, l.kind, l.created_at, e.handle, e.profile
+        FROM links l
+        JOIN content c ON l.target = c.id
+        LEFT JOIN entities e ON l.source = e.id
+        WHERE c.author = ? AND l.kind = 'like'
+        ORDER BY l.created_at DESC
+        LIMIT ?
+    ''', (current_user, limit))
+    
+    for row in await cursor.fetchall():
+        profile = json.loads(row[6]) if row[6] else {}
+        notifications.append({
+            "id": row[0],
+            "kind": "like",
+            "actor_id": row[1],
+            "actor_handle": row[5],
+            "actor_name": profile.get("name", row[5]),
+            "target_id": row[2],
+            "created_at": row[4],
+            "message": f"{profile.get('name', row[5])} liked your post"
+        })
+    
+    # Get replies to user's content
+    cursor = await storage.db.execute('''
+        SELECT c.id, c.author, c.body, c.created_at, c.reply_to, e.handle, e.profile
+        FROM content c
+        JOIN content parent ON c.reply_to = parent.id
+        LEFT JOIN entities e ON c.author = e.id
+        WHERE parent.author = ? AND c.kind = 'reply'
+        ORDER BY c.created_at DESC
+        LIMIT ?
+    ''', (current_user, limit))
+    
+    for row in await cursor.fetchall():
+        profile = json.loads(row[6]) if row[6] else {}
+        body = json.loads(row[2]) if row[2] else {}
+        notifications.append({
+            "id": row[0],
+            "kind": "reply",
+            "actor_id": row[1],
+            "actor_handle": row[5],
+            "actor_name": profile.get("name", row[5]),
+            "target_id": row[4],
+            "content_preview": body.get("text", "")[:50],
+            "created_at": row[3],
+            "message": f"{profile.get('name', row[5])} replied to your post"
+        })
+    
+    # Get new followers
+    cursor = await storage.db.execute('''
+        SELECT l.id, l.source, l.created_at, e.handle, e.profile
+        FROM links l
+        LEFT JOIN entities e ON l.source = e.id
+        WHERE l.target = ? AND l.kind = 'follow'
+        ORDER BY l.created_at DESC
+        LIMIT ?
+    ''', (current_user, limit))
+    
+    for row in await cursor.fetchall():
+        profile = json.loads(row[4]) if row[4] else {}
+        notifications.append({
+            "id": row[0],
+            "kind": "follow",
+            "actor_id": row[1],
+            "actor_handle": row[3],
+            "actor_name": profile.get("name", row[3]),
+            "created_at": row[2],
+            "message": f"{profile.get('name', row[3])} started following you"
+        })
+    
+    # Sort by created_at
+    notifications.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    
+    return {"items": notifications[:limit], "total": len(notifications)}
+
+
+# ========== Discovery Layer API ==========
+
+@app.get("/api/search")
+async def search_entities(
+    q: str = Query(..., description="Search query"),
+    type: Optional[str] = Query(None, description="Entity type: user or group"),
+    limit: int = Query(20, le=100)
+):
+    """Search for entities by name, handle, or bio."""
+    if not indexer:
+        raise HTTPException(status_code=503, detail="Indexer not initialized")
+    
+    results = indexer.search(q, kind=type, limit=limit)
+    return {
+        "query": q,
+        "results": results,
+        "total": len(results),
+    }
+
+
+@app.get("/api/resolve/{handle}")
+async def resolve_handle(handle: str):
+    """Resolve a handle to entity information."""
+    if not indexer:
+        raise HTTPException(status_code=503, detail="Indexer not initialized")
+    
+    result = indexer.resolve_handle(handle)
+    if not result:
+        raise HTTPException(status_code=404, detail="Handle not found")
+    
+    return result
+
+
+@app.get("/api/locate/{entity_id}")
+async def locate_entity(entity_id: str):
+    """Find relay URLs for an entity."""
+    if not indexer:
+        raise HTTPException(status_code=503, detail="Indexer not initialized")
+    
+    result = indexer.locate_entity(entity_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Entity not found in index")
+    
+    return result
+
+
+@app.get("/api/index/stats")
+async def get_index_stats():
+    """Get indexer statistics."""
+    if not indexer:
+        return {"status": "not_initialized"}
+    
+    return indexer.get_stats()
+
+
+@app.get("/api/index/relays")
+async def get_known_relays():
+    """Get list of known relays."""
+    if not indexer:
+        return {"relays": []}
+    
+    return {"relays": indexer.get_known_relays()}
+
+
+@app.post("/api/index/crawl")
+async def trigger_crawl(req: Optional[dict] = None):
+    """Trigger a crawl of known/seed relays."""
+    if not indexer:
+        raise HTTPException(status_code=503, detail="Indexer not initialized")
+    
+    # Add seed relays if provided
+    if req and req.get("seed_relays"):
+        for relay in req["seed_relays"]:
+            indexer.add_seed_relay(relay)
+    
+    # Start crawl in background
+    import asyncio
+    asyncio.create_task(indexer.run_crawl())
+    
+    return {
+        "status": "crawl_started",
+        "known_relays": len(indexer.relay_index),
+        "queue_size": len(indexer.crawl_queue),
+    }
+
+
+@app.post("/api/index/register")
+async def register_relay(req: dict):
+    """Register a relay with the indexer."""
+    if not indexer:
+        raise HTTPException(status_code=503, detail="Indexer not initialized")
+    
+    relay_url = req.get("relay_url")
+    if not relay_url:
+        raise HTTPException(status_code=400, detail="relay_url required")
+    
+    indexer.add_seed_relay(relay_url)
+    
+    return {
+        "status": "registered",
+        "relay_url": relay_url,
+    }
+
+
+@app.get("/.well-known/mesh/entity/{handle}")
+async def well_known_entity(handle: str):
+    """Resolve entity by handle (Discovery Layer standard endpoint)."""
+    # Try local first
+    cursor = await storage.db.execute(
+        "SELECT id, handle, profile, public_key FROM entities WHERE handle = ?",
+        (handle,)
+    )
+    row = await cursor.fetchone()
+    
+    if row:
+        profile = json.loads(row[2]) if row[2] else {}
+        return {
+            "entity_id": row[0],
+            "handle": row[1],
+            "profile": profile,
+            "public_key": row[3].hex() if row[3] else None,
+            "relay_hints": [NODE_URL],
+        }
+    
+    # Try indexer
+    if indexer:
+        result = indexer.resolve_handle(handle)
+        if result:
+            return result
+    
+    raise HTTPException(status_code=404, detail="Entity not found")
+
+
+@app.get("/api/federation/relays")
+async def federation_get_relays():
+    """Get known relays for federation gossip."""
+    relays = []
+    
+    # Add self
+    relays.append({
+        "url": NODE_URL,
+        "node_id": NODE_ID,
+        "last_seen": datetime.utcnow().isoformat(),
+    })
+    
+    # Add indexed relays
+    if indexer:
+        for relay in indexer.get_known_relays():
+            if relay["url"] != NODE_URL:
+                relays.append({
+                    "url": relay["url"],
+                    "node_id": relay.get("node_id"),
+                    "last_seen": relay.get("last_crawled"),
+                })
+    
+    return {"relays": relays}
 
 
 # WebSocket for real-time updates
