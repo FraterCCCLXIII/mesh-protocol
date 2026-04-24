@@ -34,10 +34,8 @@ export interface Post {
     avatar?: string;
   };
   kind: string;
-  body: {
-    text?: string;
-    media?: { url: string; type: string }[];
-  };
+  body: string;
+  media?: string[];
   reply_to: string | null;
   created_at: string;
   access: string;
@@ -269,12 +267,17 @@ export async function updateProfile(profile: { name?: string; bio?: string; avat
 }
 
 // Content API
-export async function createPost(text: string, replyTo?: string): Promise<{ id: string }> {
+export async function createPost(text: string, replyTo?: string, media: string[] = []): Promise<{ id: string }> {
+  const user = getStoredUser();
+  if (!user) throw new Error('Not logged in');
+  
   return apiCall<{ id: string }>('/api/content', {
     method: 'POST',
     body: JSON.stringify({
+      author: user.id,
       kind: replyTo ? 'reply' : 'post',
-      body: { text },
+      body: text,
+      media,
       reply_to: replyTo,
       access: 'public',
     }),
@@ -371,6 +374,55 @@ export async function joinGroup(groupId: string): Promise<void> {
 
 export async function leaveGroup(groupId: string): Promise<void> {
   await apiCall(`/api/groups/${groupId}/leave`, { method: 'POST' });
+}
+
+// Group Admin API
+export async function addGroupAdmin(groupId: string, userId: string, role: 'admin' | 'moderator' = 'admin'): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/admins`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, role }),
+  });
+}
+
+export async function removeGroupAdmin(groupId: string, userId: string): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/admins/${userId}`, { method: 'DELETE' });
+}
+
+export async function transferGroupOwnership(groupId: string, newOwnerId: string): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/transfer`, {
+    method: 'POST',
+    body: JSON.stringify({ new_owner_id: newOwnerId }),
+  });
+}
+
+// Group Moderation API
+export async function kickFromGroup(groupId: string, userId: string): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/kick`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export async function banFromGroup(groupId: string, userId: string, reason: string = ''): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/ban`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, reason }),
+  });
+}
+
+export async function unbanFromGroup(groupId: string, userId: string): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/ban/${userId}`, { method: 'DELETE' });
+}
+
+export async function getGroupBans(groupId: string): Promise<{ bans: Array<{ user_id: string; handle: string; reason: string; banned_at: string }> }> {
+  return apiCall(`/api/groups/${groupId}/bans`);
+}
+
+export async function removeGroupContent(groupId: string, contentId: string, reason: string = ''): Promise<void> {
+  await apiCall(`/api/groups/${groupId}/content/${contentId}/remove`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
 }
 
 // Node info

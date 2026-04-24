@@ -9,7 +9,7 @@ interface Post {
   author: string;
   author_handle?: string;
   author_profile?: { name?: string };
-  body: { text?: string };
+  body: string | { text?: string };  // Support both formats
   created_at: string;
   like_count: number;
   reply_count: number;
@@ -80,7 +80,7 @@ export function PostCard({ post, onLike }: PostCardProps) {
               </span>
             </div>
             <p className="mt-1 whitespace-pre-wrap break-words">
-              {post.body?.text}
+              {typeof post.body === 'string' ? post.body : post.body?.text}
             </p>
             <div className="flex items-center gap-6 mt-3 -ml-2">
               <Button 
