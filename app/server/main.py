@@ -1940,10 +1940,35 @@ async def federation_get_content(since: str = None, limit: int = 100):
 
 
 @app.get("/api/federation/entities")
-async def federation_get_entities(limit: int = 100):
-    """Get all public entities for federation sync."""
+async def federation_get_entities(limit: int = 100, kind: Optional[str] = None):
+    """Get all public entities for federation sync (users and groups)."""
+    if kind:
+        cursor = await storage.db.execute(
+            "SELECT * FROM entities WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
+            (kind, limit)
+        )
+    else:
+        # Export both users AND groups for federation
+        cursor = await storage.db.execute(
+            "SELECT * FROM entities ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        )
+    rows = await cursor.fetchall()
+    
+    results = []
+    for row in rows:
+        entity = await storage.get_entity(row['id'])
+        if entity:
+            results.append(entity.to_dict())
+    
+    return {"items": results, "node_id": NODE_ID}
+
+
+@app.get("/api/federation/groups")
+async def federation_get_groups(limit: int = 100):
+    """Get all public groups for federation sync."""
     cursor = await storage.db.execute(
-        "SELECT * FROM entities WHERE kind = 'user' ORDER BY created_at DESC LIMIT ?",
+        "SELECT * FROM entities WHERE kind = 'group' ORDER BY created_at DESC LIMIT ?",
         (limit,)
     )
     rows = await cursor.fetchall()
@@ -1959,7 +1984,7 @@ async def federation_get_entities(limit: int = 100):
 
 @app.post("/api/federation/import")
 async def federation_import(req: dict):
-    """Import content from a remote node."""
+    """Import entities (users, groups) and content from a remote node."""
     import httpx
     
     remote_url = req.get("node_url", "").rstrip("/")
@@ -1968,10 +1993,10 @@ async def federation_import(req: dict):
     if not remote_url:
         raise HTTPException(status_code=400, detail="node_url required")
     
-    imported = {"entities": 0, "content": 0}
+    imported = {"entities": 0, "groups": 0, "content": 0}
     
     async with httpx.AsyncClient(timeout=30) as client:
-        # Import entities
+        # Import ALL entities (users AND groups)
         try:
             r = await client.get(f"{remote_url}/api/federation/entities")
             r.raise_for_status()
@@ -1981,22 +2006,34 @@ async def federation_import(req: dict):
                 existing = await storage.get_entity(ent["id"])
                 if not existing:
                     try:
+                        # Determine entity kind
+                        kind = ent.get("kind", "user")
+                        now = datetime.utcnow().isoformat()
+                        
                         await storage.db.execute('''
-                            INSERT INTO entities (id, kind, public_key, encryption_key, handle, profile, created_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO entities (id, kind, public_key, encryption_key, handle, profile, created_at, updated_at, sig)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             ent["id"],
-                            ent.get("kind", "user"),
-                            bytes.fromhex(ent.get("public_key", "")) if ent.get("public_key") else b"",
+                            kind,
+                            bytes.fromhex(ent.get("public_key", "00" * 32)) if ent.get("public_key") else b"\x00" * 32,
                             bytes.fromhex(ent.get("encryption_key", "")) if ent.get("encryption_key") else None,
                             ent.get("handle"),
                             json.dumps(ent.get("profile", {})),
-                            ent.get("created_at", datetime.utcnow().isoformat()),
+                            ent.get("created_at", now),
+                            ent.get("updated_at", now),
+                            bytes.fromhex(ent.get("sig", "00" * 64)) if ent.get("sig") else b"\x00" * 64,
                         ))
                         await storage.db.commit()
-                        imported["entities"] += 1
-                    except:
-                        pass
+                        
+                        if kind == "group":
+                            imported["groups"] += 1
+                        else:
+                            imported["entities"] += 1
+                            
+                        print(f"[Federation] Imported {kind}: {ent.get('handle', ent['id'][:16])}")
+                    except Exception as ex:
+                        print(f"[Federation] Failed to import entity {ent['id']}: {ex}")
         except Exception as e:
             print(f"[Federation] Failed to import entities: {e}")
         
@@ -2013,22 +2050,25 @@ async def federation_import(req: dict):
                 existing = await storage.get_content(item["id"])
                 if not existing:
                     try:
+                        now = datetime.utcnow().isoformat()
                         await storage.db.execute('''
-                            INSERT INTO content (id, kind, author, body, reply_to, group_id, access, signature, created_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (
                             item["id"],
-                            item.get("kind", "post"),
                             item.get("author"),
+                            item.get("kind", "post"),
                             json.dumps(item.get("body", {})),
                             item.get("reply_to"),
-                            item.get("group_id"),
+                            item.get("created_at", now),
                             item.get("access", "public"),
-                            item.get("signature", ""),
-                            item.get("created_at", datetime.utcnow().isoformat()),
+                            0,  # encrypted
+                            None,  # encryption_metadata
+                            bytes.fromhex(item.get("sig", "00" * 64)) if item.get("sig") else b"\x00" * 64,
                         ))
                         await storage.db.commit()
                         imported["content"] += 1
+                        print(f"[Federation] Imported content: {item['id'][:16]}")
                     except Exception as ex:
                         print(f"[Federation] Failed to import content {item['id']}: {ex}")
         except Exception as e:
@@ -2036,7 +2076,9 @@ async def federation_import(req: dict):
     
     return {
         "status": "imported",
-        "imported": imported,
+        "entities_imported": imported["entities"],
+        "groups_imported": imported["groups"],
+        "content_imported": imported["content"],
         "from_node": remote_url,
     }
 
