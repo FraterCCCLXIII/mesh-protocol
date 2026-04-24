@@ -10,7 +10,8 @@ import {
   Bell, 
   Settings, 
   LogOut,
-  PenSquare
+  PenSquare,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/profile", icon: User, label: "Profile" },
   { href: "/groups", icon: Users, label: "Groups" },
+  { href: "/publications", icon: FileText, label: "Publications" },
   { href: "/notifications", icon: Bell, label: "Notifications" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];

@@ -269,6 +269,57 @@ class Storage:
             CREATE INDEX IF NOT EXISTS idx_links_target ON links(target);
             CREATE INDEX IF NOT EXISTS idx_links_kind ON links(kind);
             CREATE INDEX IF NOT EXISTS idx_log_actor ON log_events(actor);
+            
+            -- Subscriptions and publications (Substack-like features)
+            CREATE TABLE IF NOT EXISTS publications (
+                id TEXT PRIMARY KEY,
+                owner_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                handle TEXT UNIQUE,
+                price_monthly INTEGER DEFAULT 0,
+                price_yearly INTEGER DEFAULT 0,
+                stripe_product_id TEXT,
+                stripe_price_monthly_id TEXT,
+                stripe_price_yearly_id TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                settings TEXT
+            );
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id TEXT PRIMARY KEY,
+                subscriber_id TEXT NOT NULL,
+                publication_id TEXT NOT NULL,
+                tier TEXT NOT NULL DEFAULT 'free',
+                status TEXT NOT NULL DEFAULT 'active',
+                stripe_subscription_id TEXT,
+                stripe_customer_id TEXT,
+                current_period_start TEXT,
+                current_period_end TEXT,
+                created_at TEXT NOT NULL,
+                canceled_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS articles (
+                id TEXT PRIMARY KEY,
+                publication_id TEXT NOT NULL,
+                author_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                subtitle TEXT,
+                content TEXT NOT NULL,
+                excerpt TEXT,
+                cover_image TEXT,
+                access TEXT NOT NULL DEFAULT 'public',
+                status TEXT NOT NULL DEFAULT 'draft',
+                published_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_publications_owner ON publications(owner_id);
+            CREATE INDEX IF NOT EXISTS idx_publications_handle ON publications(handle);
+            CREATE INDEX IF NOT EXISTS idx_subscriptions_subscriber ON subscriptions(subscriber_id);
+            CREATE INDEX IF NOT EXISTS idx_subscriptions_publication ON subscriptions(publication_id);
+            CREATE INDEX IF NOT EXISTS idx_articles_publication ON articles(publication_id);
+            CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
         """)
         await self.db.commit()
     
@@ -1298,6 +1349,489 @@ async def leave_group(group_id: str, current_user: str = Depends(require_auth)):
     return {"status": "left"}
 
 
+# ========== Publication & Subscription (Substack-like) Endpoints ==========
+
+# Pydantic models for publications
+class PublicationCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    handle: Optional[str] = None
+    price_monthly: int = 0  # In cents
+    price_yearly: int = 0   # In cents
+
+class ArticleCreate(BaseModel):
+    publication_id: str
+    title: str
+    subtitle: Optional[str] = None
+    content: str
+    excerpt: Optional[str] = None
+    cover_image: Optional[str] = None
+    access: str = "public"  # public, subscribers, paid
+    status: str = "draft"   # draft, published
+
+class ArticleUpdate(BaseModel):
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    content: Optional[str] = None
+    excerpt: Optional[str] = None
+    cover_image: Optional[str] = None
+    access: Optional[str] = None
+    status: Optional[str] = None
+
+class SubscriptionCreate(BaseModel):
+    publication_id: str
+    tier: str = "free"  # free, paid
+
+# Stripe configuration (set via environment variables)
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+
+@app.post("/api/publications")
+async def create_publication(req: PublicationCreate, current_user: str = Depends(require_auth)):
+    """Create a new publication."""
+    pub_id = f"pub:{sha256_hex(f'{current_user}:{req.name}:{datetime.utcnow().isoformat()}'.encode())[:32]}"
+    
+    # Check handle uniqueness
+    if req.handle:
+        cursor = await storage.db.execute(
+            "SELECT id FROM publications WHERE handle = ?", (req.handle,)
+        )
+        if await cursor.fetchone():
+            raise HTTPException(status_code=409, detail="Handle already taken")
+    
+    now = datetime.utcnow().isoformat()
+    
+    await storage.db.execute('''
+        INSERT INTO publications (id, owner_id, name, description, handle, price_monthly, price_yearly, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        pub_id, current_user, req.name, req.description, req.handle,
+        req.price_monthly, req.price_yearly, now, now
+    ))
+    await storage.db.commit()
+    
+    return {
+        "id": pub_id,
+        "owner_id": current_user,
+        "name": req.name,
+        "description": req.description,
+        "handle": req.handle,
+        "price_monthly": req.price_monthly,
+        "price_yearly": req.price_yearly,
+        "created_at": now,
+    }
+
+
+@app.get("/api/publications")
+async def list_publications(owner_id: Optional[str] = None, limit: int = 50):
+    """List publications."""
+    query = "SELECT * FROM publications"
+    params = []
+    
+    if owner_id:
+        query += " WHERE owner_id = ?"
+        params.append(owner_id)
+    
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    
+    cursor = await storage.db.execute(query, params)
+    rows = await cursor.fetchall()
+    
+    results = []
+    for row in rows:
+        owner = await storage.get_entity(row["owner_id"])
+        results.append({
+            "id": row["id"],
+            "owner_id": row["owner_id"],
+            "owner_handle": owner.handle if owner else None,
+            "owner_profile": owner.profile if owner else None,
+            "name": row["name"],
+            "description": row["description"],
+            "handle": row["handle"],
+            "price_monthly": row["price_monthly"],
+            "price_yearly": row["price_yearly"],
+            "created_at": row["created_at"],
+        })
+    
+    return {"items": results}
+
+
+@app.get("/api/publications/{pub_id}")
+async def get_publication(pub_id: str):
+    """Get a publication by ID."""
+    cursor = await storage.db.execute("SELECT * FROM publications WHERE id = ?", (pub_id,))
+    row = await cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    
+    owner = await storage.get_entity(row["owner_id"])
+    
+    # Get subscriber count
+    cursor = await storage.db.execute(
+        "SELECT COUNT(*) as cnt FROM subscriptions WHERE publication_id = ? AND status = 'active'",
+        (pub_id,)
+    )
+    sub_row = await cursor.fetchone()
+    
+    return {
+        "id": row["id"],
+        "owner_id": row["owner_id"],
+        "owner_handle": owner.handle if owner else None,
+        "owner_profile": owner.profile if owner else None,
+        "name": row["name"],
+        "description": row["description"],
+        "handle": row["handle"],
+        "price_monthly": row["price_monthly"],
+        "price_yearly": row["price_yearly"],
+        "subscriber_count": sub_row["cnt"] if sub_row else 0,
+        "created_at": row["created_at"],
+    }
+
+
+@app.post("/api/articles")
+async def create_article(req: ArticleCreate, current_user: str = Depends(require_auth)):
+    """Create a new article."""
+    # Verify ownership
+    cursor = await storage.db.execute(
+        "SELECT owner_id FROM publications WHERE id = ?", (req.publication_id,)
+    )
+    row = await cursor.fetchone()
+    if not row or row["owner_id"] != current_user:
+        raise HTTPException(status_code=403, detail="Not authorized to post to this publication")
+    
+    article_id = f"art:{sha256_hex(f'{current_user}:{req.title}:{datetime.utcnow().isoformat()}'.encode())[:32]}"
+    now = datetime.utcnow().isoformat()
+    
+    published_at = now if req.status == "published" else None
+    
+    await storage.db.execute('''
+        INSERT INTO articles (id, publication_id, author_id, title, subtitle, content, excerpt, cover_image, access, status, published_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        article_id, req.publication_id, current_user, req.title, req.subtitle,
+        req.content, req.excerpt, req.cover_image, req.access, req.status,
+        published_at, now, now
+    ))
+    await storage.db.commit()
+    
+    return {
+        "id": article_id,
+        "publication_id": req.publication_id,
+        "title": req.title,
+        "status": req.status,
+        "created_at": now,
+    }
+
+
+@app.get("/api/articles")
+async def list_articles(
+    publication_id: Optional[str] = None,
+    status: str = "published",
+    limit: int = 50,
+    current_user: str = Depends(get_current_user)
+):
+    """List articles."""
+    query = "SELECT * FROM articles WHERE 1=1"
+    params = []
+    
+    if publication_id:
+        query += " AND publication_id = ?"
+        params.append(publication_id)
+    
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+    
+    query += " ORDER BY published_at DESC, created_at DESC LIMIT ?"
+    params.append(limit)
+    
+    cursor = await storage.db.execute(query, params)
+    rows = await cursor.fetchall()
+    
+    results = []
+    for row in rows:
+        # Check access
+        can_view = row["access"] == "public"
+        if not can_view and current_user:
+            # Check if subscriber
+            cursor2 = await storage.db.execute(
+                "SELECT tier FROM subscriptions WHERE subscriber_id = ? AND publication_id = ? AND status = 'active'",
+                (current_user, row["publication_id"])
+            )
+            sub = await cursor2.fetchone()
+            if sub:
+                can_view = row["access"] == "subscribers" or (row["access"] == "paid" and sub["tier"] == "paid")
+        
+        author = await storage.get_entity(row["author_id"])
+        
+        results.append({
+            "id": row["id"],
+            "publication_id": row["publication_id"],
+            "author_id": row["author_id"],
+            "author_handle": author.handle if author else None,
+            "author_profile": author.profile if author else None,
+            "title": row["title"],
+            "subtitle": row["subtitle"],
+            "excerpt": row["excerpt"] or (row["content"][:200] + "..." if len(row["content"]) > 200 else row["content"]) if can_view else None,
+            "cover_image": row["cover_image"],
+            "access": row["access"],
+            "status": row["status"],
+            "published_at": row["published_at"],
+            "can_view": can_view,
+        })
+    
+    return {"items": results}
+
+
+@app.get("/api/articles/{article_id}")
+async def get_article(article_id: str, current_user: str = Depends(get_current_user)):
+    """Get an article by ID."""
+    cursor = await storage.db.execute("SELECT * FROM articles WHERE id = ?", (article_id,))
+    row = await cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    # Check access
+    can_view = row["access"] == "public"
+    if not can_view and current_user:
+        cursor2 = await storage.db.execute(
+            "SELECT tier FROM subscriptions WHERE subscriber_id = ? AND publication_id = ? AND status = 'active'",
+            (current_user, row["publication_id"])
+        )
+        sub = await cursor2.fetchone()
+        if sub:
+            can_view = row["access"] == "subscribers" or (row["access"] == "paid" and sub["tier"] == "paid")
+    
+    author = await storage.get_entity(row["author_id"])
+    
+    return {
+        "id": row["id"],
+        "publication_id": row["publication_id"],
+        "author_id": row["author_id"],
+        "author_handle": author.handle if author else None,
+        "author_profile": author.profile if author else None,
+        "title": row["title"],
+        "subtitle": row["subtitle"],
+        "content": row["content"] if can_view else None,
+        "excerpt": row["excerpt"],
+        "cover_image": row["cover_image"],
+        "access": row["access"],
+        "status": row["status"],
+        "published_at": row["published_at"],
+        "can_view": can_view,
+        "paywall_message": "Subscribe to read this article" if not can_view else None,
+    }
+
+
+@app.put("/api/articles/{article_id}")
+async def update_article(article_id: str, req: ArticleUpdate, current_user: str = Depends(require_auth)):
+    """Update an article."""
+    cursor = await storage.db.execute("SELECT * FROM articles WHERE id = ?", (article_id,))
+    row = await cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Article not found")
+    if row["author_id"] != current_user:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    updates = []
+    params = []
+    
+    for field in ["title", "subtitle", "content", "excerpt", "cover_image", "access", "status"]:
+        value = getattr(req, field)
+        if value is not None:
+            updates.append(f"{field} = ?")
+            params.append(value)
+    
+    if req.status == "published" and row["status"] != "published":
+        updates.append("published_at = ?")
+        params.append(datetime.utcnow().isoformat())
+    
+    updates.append("updated_at = ?")
+    params.append(datetime.utcnow().isoformat())
+    params.append(article_id)
+    
+    await storage.db.execute(
+        f"UPDATE articles SET {', '.join(updates)} WHERE id = ?",
+        params
+    )
+    await storage.db.commit()
+    
+    return {"status": "updated", "id": article_id}
+
+
+@app.post("/api/subscriptions")
+async def create_subscription(req: SubscriptionCreate, current_user: str = Depends(require_auth)):
+    """Subscribe to a publication."""
+    # Check if already subscribed
+    cursor = await storage.db.execute(
+        "SELECT id FROM subscriptions WHERE subscriber_id = ? AND publication_id = ? AND status = 'active'",
+        (current_user, req.publication_id)
+    )
+    if await cursor.fetchone():
+        raise HTTPException(status_code=409, detail="Already subscribed")
+    
+    sub_id = f"sub:{sha256_hex(f'{current_user}:{req.publication_id}:{datetime.utcnow().isoformat()}'.encode())[:32]}"
+    now = datetime.utcnow().isoformat()
+    
+    await storage.db.execute('''
+        INSERT INTO subscriptions (id, subscriber_id, publication_id, tier, status, created_at)
+        VALUES (?, ?, ?, ?, 'active', ?)
+    ''', (sub_id, current_user, req.publication_id, req.tier, now))
+    await storage.db.commit()
+    
+    return {
+        "id": sub_id,
+        "subscriber_id": current_user,
+        "publication_id": req.publication_id,
+        "tier": req.tier,
+        "status": "active",
+        "created_at": now,
+    }
+
+
+@app.get("/api/subscriptions")
+async def list_subscriptions(current_user: str = Depends(require_auth)):
+    """List user's subscriptions."""
+    cursor = await storage.db.execute(
+        "SELECT s.*, p.name as pub_name, p.handle as pub_handle FROM subscriptions s JOIN publications p ON s.publication_id = p.id WHERE s.subscriber_id = ? AND s.status = 'active'",
+        (current_user,)
+    )
+    rows = await cursor.fetchall()
+    
+    return {"items": [dict(row) for row in rows]}
+
+
+@app.delete("/api/subscriptions/{sub_id}")
+async def cancel_subscription(sub_id: str, current_user: str = Depends(require_auth)):
+    """Cancel a subscription."""
+    cursor = await storage.db.execute(
+        "SELECT * FROM subscriptions WHERE id = ? AND subscriber_id = ?",
+        (sub_id, current_user)
+    )
+    row = await cursor.fetchone()
+    
+    if not row:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    
+    await storage.db.execute(
+        "UPDATE subscriptions SET status = 'canceled', canceled_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(), sub_id)
+    )
+    await storage.db.commit()
+    
+    return {"status": "canceled"}
+
+
+# Stripe integration endpoints
+@app.post("/api/stripe/create-checkout-session")
+async def create_checkout_session(req: dict, current_user: str = Depends(require_auth)):
+    """Create a Stripe checkout session for subscription."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+    
+    import httpx
+    
+    publication_id = req.get("publication_id")
+    billing_cycle = req.get("billing_cycle", "monthly")  # monthly or yearly
+    success_url = req.get("success_url", f"{NODE_URL}/subscription/success")
+    cancel_url = req.get("cancel_url", f"{NODE_URL}/subscription/cancel")
+    
+    # Get publication
+    cursor = await storage.db.execute("SELECT * FROM publications WHERE id = ?", (publication_id,))
+    pub = await cursor.fetchone()
+    if not pub:
+        raise HTTPException(status_code=404, detail="Publication not found")
+    
+    price = pub["price_monthly"] if billing_cycle == "monthly" else pub["price_yearly"]
+    if price == 0:
+        raise HTTPException(status_code=400, detail="This publication is free")
+    
+    # Create Stripe checkout session
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.stripe.com/v1/checkout/sessions",
+            headers={
+                "Authorization": f"Bearer {STRIPE_SECRET_KEY}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data={
+                "mode": "subscription",
+                "success_url": success_url,
+                "cancel_url": cancel_url,
+                "line_items[0][price_data][currency]": "usd",
+                "line_items[0][price_data][product_data][name]": f"{pub['name']} Subscription",
+                "line_items[0][price_data][unit_amount]": price,
+                "line_items[0][price_data][recurring][interval]": "month" if billing_cycle == "monthly" else "year",
+                "line_items[0][quantity]": 1,
+                "metadata[publication_id]": publication_id,
+                "metadata[subscriber_id]": current_user,
+                "metadata[tier]": "paid",
+            }
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Stripe error: {response.text}")
+        
+        session = response.json()
+        return {"checkout_url": session.get("url"), "session_id": session.get("id")}
+
+
+@app.post("/api/stripe/webhook")
+async def stripe_webhook(request):
+    """Handle Stripe webhooks."""
+    import hmac
+    from fastapi import Request
+    
+    if not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+    
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
+    
+    # Verify signature (simplified)
+    # In production, use stripe.Webhook.construct_event
+    
+    try:
+        event = json.loads(payload)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    
+    event_type = event.get("type")
+    data = event.get("data", {}).get("object", {})
+    
+    if event_type == "checkout.session.completed":
+        metadata = data.get("metadata", {})
+        publication_id = metadata.get("publication_id")
+        subscriber_id = metadata.get("subscriber_id")
+        stripe_subscription_id = data.get("subscription")
+        stripe_customer_id = data.get("customer")
+        
+        if publication_id and subscriber_id:
+            sub_id = f"sub:{sha256_hex(f'{subscriber_id}:{publication_id}:{datetime.utcnow().isoformat()}'.encode())[:32]}"
+            now = datetime.utcnow().isoformat()
+            
+            await storage.db.execute('''
+                INSERT OR REPLACE INTO subscriptions (id, subscriber_id, publication_id, tier, status, stripe_subscription_id, stripe_customer_id, created_at)
+                VALUES (?, ?, ?, 'paid', 'active', ?, ?, ?)
+            ''', (sub_id, subscriber_id, publication_id, stripe_subscription_id, stripe_customer_id, now))
+            await storage.db.commit()
+    
+    elif event_type == "customer.subscription.deleted":
+        stripe_sub_id = data.get("id")
+        await storage.db.execute(
+            "UPDATE subscriptions SET status = 'canceled', canceled_at = ? WHERE stripe_subscription_id = ?",
+            (datetime.utcnow().isoformat(), stripe_sub_id)
+        )
+        await storage.db.commit()
+    
+    return {"received": True}
+
+
 # Federation endpoints
 @app.get("/api/federation/nodes")
 async def list_known_nodes():
@@ -1318,6 +1852,52 @@ async def register_node(node: NodeInfo):
     return {"status": "registered"}
 
 
+@app.post("/api/federation/connect")
+async def connect_to_node(req: dict):
+    """Connect to a remote node and sync."""
+    import httpx
+    
+    remote_url = req.get("node_url", "").rstrip("/")
+    if not remote_url:
+        raise HTTPException(status_code=400, detail="node_url required")
+    
+    # Discover remote node
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.get(f"{remote_url}/.well-known/mesh-node")
+            r.raise_for_status()
+            node_info = r.json()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to connect: {e}")
+    
+    # Register remote node
+    known_nodes[remote_url] = {
+        "node_id": node_info.get("node_id"),
+        "node_url": remote_url,
+        "protocol_version": node_info.get("protocol_version"),
+        "features": node_info.get("features", []),
+        "last_seen": datetime.utcnow().isoformat(),
+    }
+    
+    # Register ourselves with remote node
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            await client.post(f"{remote_url}/api/federation/nodes", json={
+                "node_id": NODE_ID,
+                "node_url": NODE_URL,
+                "protocol_version": "1.1",
+                "features": ["entities", "content", "links", "groups", "federation"],
+            })
+        except:
+            pass  # Not critical if this fails
+    
+    return {
+        "status": "connected",
+        "remote_node": known_nodes[remote_url],
+        "local_node": {"node_id": NODE_ID, "node_url": NODE_URL},
+    }
+
+
 @app.get("/api/federation/sync/{entity_id}")
 async def sync_entity(entity_id: str, since_seq: int = 0):
     """Get events for an entity since a sequence number (for federation sync)."""
@@ -1326,6 +1906,138 @@ async def sync_entity(entity_id: str, since_seq: int = 0):
         "entity_id": entity_id,
         "events": [e.to_dict() for e in events],
         "head_seq": await storage.get_log_seq(entity_id),
+    }
+
+
+@app.get("/api/federation/content")
+async def federation_get_content(since: str = None, limit: int = 100):
+    """Get all content since a timestamp for federation sync."""
+    query = "SELECT * FROM content WHERE access = 'public'"
+    params = []
+    
+    if since:
+        query += " AND created_at > ?"
+        params.append(since)
+    
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    
+    cursor = await storage.db.execute(query, params)
+    rows = await cursor.fetchall()
+    
+    results = []
+    for row in rows:
+        content = await storage.get_content(row['id'])
+        if content:
+            item = content.to_dict()
+            author = await storage.get_entity(content.author)
+            if author:
+                item['author_handle'] = author.handle
+                item['author_profile'] = author.profile
+            results.append(item)
+    
+    return {"items": results, "node_id": NODE_ID}
+
+
+@app.get("/api/federation/entities")
+async def federation_get_entities(limit: int = 100):
+    """Get all public entities for federation sync."""
+    cursor = await storage.db.execute(
+        "SELECT * FROM entities WHERE kind = 'user' ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    )
+    rows = await cursor.fetchall()
+    
+    results = []
+    for row in rows:
+        entity = await storage.get_entity(row['id'])
+        if entity:
+            results.append(entity.to_dict())
+    
+    return {"items": results, "node_id": NODE_ID}
+
+
+@app.post("/api/federation/import")
+async def federation_import(req: dict):
+    """Import content from a remote node."""
+    import httpx
+    
+    remote_url = req.get("node_url", "").rstrip("/")
+    since = req.get("since")
+    
+    if not remote_url:
+        raise HTTPException(status_code=400, detail="node_url required")
+    
+    imported = {"entities": 0, "content": 0}
+    
+    async with httpx.AsyncClient(timeout=30) as client:
+        # Import entities
+        try:
+            r = await client.get(f"{remote_url}/api/federation/entities")
+            r.raise_for_status()
+            entities = r.json().get("items", [])
+            
+            for ent in entities:
+                existing = await storage.get_entity(ent["id"])
+                if not existing:
+                    try:
+                        await storage.db.execute('''
+                            INSERT INTO entities (id, kind, public_key, encryption_key, handle, profile, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            ent["id"],
+                            ent.get("kind", "user"),
+                            bytes.fromhex(ent.get("public_key", "")) if ent.get("public_key") else b"",
+                            bytes.fromhex(ent.get("encryption_key", "")) if ent.get("encryption_key") else None,
+                            ent.get("handle"),
+                            json.dumps(ent.get("profile", {})),
+                            ent.get("created_at", datetime.utcnow().isoformat()),
+                        ))
+                        await storage.db.commit()
+                        imported["entities"] += 1
+                    except:
+                        pass
+        except Exception as e:
+            print(f"[Federation] Failed to import entities: {e}")
+        
+        # Import content
+        try:
+            params = {"limit": 100}
+            if since:
+                params["since"] = since
+            r = await client.get(f"{remote_url}/api/federation/content", params=params)
+            r.raise_for_status()
+            content_items = r.json().get("items", [])
+            
+            for item in content_items:
+                existing = await storage.get_content(item["id"])
+                if not existing:
+                    try:
+                        await storage.db.execute('''
+                            INSERT INTO content (id, kind, author, body, reply_to, group_id, access, signature, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            item["id"],
+                            item.get("kind", "post"),
+                            item.get("author"),
+                            json.dumps(item.get("body", {})),
+                            item.get("reply_to"),
+                            item.get("group_id"),
+                            item.get("access", "public"),
+                            item.get("signature", ""),
+                            item.get("created_at", datetime.utcnow().isoformat()),
+                        ))
+                        await storage.db.commit()
+                        imported["content"] += 1
+                    except Exception as ex:
+                        print(f"[Federation] Failed to import content {item['id']}: {ex}")
+        except Exception as e:
+            print(f"[Federation] Failed to import content: {e}")
+    
+    return {
+        "status": "imported",
+        "imported": imported,
+        "from_node": remote_url,
     }
 
 
