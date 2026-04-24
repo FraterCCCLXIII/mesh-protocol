@@ -138,7 +138,7 @@ export async function signMessage(message: string, privateKey: string): Promise<
 }
 
 // API helpers
-async function apiCall<T>(
+export async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
