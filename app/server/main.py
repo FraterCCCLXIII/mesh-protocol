@@ -1399,6 +1399,288 @@ async def leave_group(group_id: str, current_user: str = Depends(require_auth)):
     return {"status": "left"}
 
 
+# ========== Group Admin & Moderation ==========
+
+async def is_group_admin(group_id: str, user_id: str) -> bool:
+    """Check if user is owner/admin of group."""
+    cursor = await storage.db.execute('''
+        SELECT data FROM links 
+        WHERE source = ? AND target = ? AND kind = 'member' AND tombstone = 0
+    ''', (user_id, group_id))
+    row = await cursor.fetchone()
+    if not row:
+        return False
+    data = json.loads(row[0]) if row[0] else {}
+    return data.get("role") in ("owner", "admin", "moderator")
+
+
+async def is_group_owner(group_id: str, user_id: str) -> bool:
+    """Check if user is owner of group."""
+    cursor = await storage.db.execute('''
+        SELECT data FROM links 
+        WHERE source = ? AND target = ? AND kind = 'member' AND tombstone = 0
+    ''', (user_id, group_id))
+    row = await cursor.fetchone()
+    if not row:
+        return False
+    data = json.loads(row[0]) if row[0] else {}
+    return data.get("role") == "owner"
+
+
+@app.post("/api/groups/{group_id}/admins")
+async def add_group_admin(group_id: str, req: dict, current_user: str = Depends(require_auth)):
+    """Add an admin to a group (owner only)."""
+    if not await is_group_owner(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Only owner can add admins")
+    
+    user_id = req.get("user_id")
+    role = req.get("role", "admin")  # admin or moderator
+    
+    if role not in ("admin", "moderator"):
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # Update their membership role
+    link_id = generate_link_id(user_id, "member", group_id)
+    await storage.db.execute('''
+        UPDATE links SET data = ? WHERE id = ?
+    ''', (json.dumps({"role": role}), link_id))
+    await storage.db.commit()
+    
+    return {"status": "admin_added", "user_id": user_id, "role": role}
+
+
+@app.delete("/api/groups/{group_id}/admins/{user_id}")
+async def remove_group_admin(group_id: str, user_id: str, current_user: str = Depends(require_auth)):
+    """Remove admin from a group (owner only)."""
+    if not await is_group_owner(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Only owner can remove admins")
+    
+    # Downgrade to regular member
+    link_id = generate_link_id(user_id, "member", group_id)
+    await storage.db.execute('''
+        UPDATE links SET data = ? WHERE id = ?
+    ''', (json.dumps({"role": "member"}), link_id))
+    await storage.db.commit()
+    
+    return {"status": "admin_removed", "user_id": user_id}
+
+
+@app.post("/api/groups/{group_id}/transfer")
+async def transfer_group_ownership(group_id: str, req: dict, current_user: str = Depends(require_auth)):
+    """Transfer group ownership (owner only)."""
+    if not await is_group_owner(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Only owner can transfer ownership")
+    
+    new_owner_id = req.get("new_owner_id")
+    if not new_owner_id:
+        raise HTTPException(status_code=400, detail="new_owner_id required")
+    
+    # Check new owner is a member
+    cursor = await storage.db.execute('''
+        SELECT id FROM links 
+        WHERE source = ? AND target = ? AND kind = 'member' AND tombstone = 0
+    ''', (new_owner_id, group_id))
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=400, detail="New owner must be a member")
+    
+    # Update old owner to admin
+    old_link_id = generate_link_id(current_user, "member", group_id)
+    await storage.db.execute('''
+        UPDATE links SET data = ? WHERE id = ?
+    ''', (json.dumps({"role": "admin"}), old_link_id))
+    
+    # Update new owner
+    new_link_id = generate_link_id(new_owner_id, "member", group_id)
+    await storage.db.execute('''
+        UPDATE links SET data = ? WHERE id = ?
+    ''', (json.dumps({"role": "owner"}), new_link_id))
+    
+    # Update group profile
+    entity = await storage.get_entity(group_id)
+    if entity:
+        entity.profile["owner"] = new_owner_id
+        await storage.db.execute(
+            "UPDATE entities SET profile = ? WHERE id = ?",
+            (json.dumps(entity.profile), group_id)
+        )
+    
+    await storage.db.commit()
+    
+    return {"status": "transferred", "new_owner": new_owner_id}
+
+
+@app.post("/api/groups/{group_id}/kick")
+async def kick_from_group(group_id: str, req: dict, current_user: str = Depends(require_auth)):
+    """Remove a user from group (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user_id = req.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id required")
+    
+    # Can't kick owner
+    if await is_group_owner(group_id, user_id):
+        raise HTTPException(status_code=403, detail="Cannot kick the owner")
+    
+    # Remove membership
+    link_id = generate_link_id(user_id, "member", group_id)
+    await storage.db.execute(
+        "UPDATE links SET tombstone = 1 WHERE id = ?", (link_id,)
+    )
+    await storage.db.commit()
+    
+    return {"status": "kicked", "user_id": user_id}
+
+
+@app.post("/api/groups/{group_id}/ban")
+async def ban_from_group(group_id: str, req: dict, current_user: str = Depends(require_auth)):
+    """Ban a user from group (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user_id = req.get("user_id")
+    reason = req.get("reason", "")
+    
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id required")
+    
+    # Can't ban owner
+    if await is_group_owner(group_id, user_id):
+        raise HTTPException(status_code=403, detail="Cannot ban the owner")
+    
+    # Remove membership
+    link_id = generate_link_id(user_id, "member", group_id)
+    await storage.db.execute(
+        "UPDATE links SET tombstone = 1 WHERE id = ?", (link_id,)
+    )
+    
+    # Create ban link
+    ban_link_id = generate_link_id(group_id, "ban", user_id)
+    await storage.db.execute('''
+        INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+        VALUES (?, ?, ?, 'ban', ?, ?, 0, ?)
+    ''', (ban_link_id, group_id, user_id, json.dumps({"reason": reason, "by": current_user}), datetime.utcnow().isoformat(), b""))
+    
+    await storage.db.commit()
+    
+    return {"status": "banned", "user_id": user_id}
+
+
+@app.delete("/api/groups/{group_id}/ban/{user_id}")
+async def unban_from_group(group_id: str, user_id: str, current_user: str = Depends(require_auth)):
+    """Unban a user from group (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    ban_link_id = generate_link_id(group_id, "ban", user_id)
+    await storage.db.execute(
+        "UPDATE links SET tombstone = 1 WHERE id = ?", (ban_link_id,)
+    )
+    await storage.db.commit()
+    
+    return {"status": "unbanned", "user_id": user_id}
+
+
+@app.get("/api/groups/{group_id}/bans")
+async def list_group_bans(group_id: str, current_user: str = Depends(require_auth)):
+    """List banned users (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    cursor = await storage.db.execute('''
+        SELECT l.target, l.data, l.created_at, e.handle, e.profile
+        FROM links l
+        LEFT JOIN entities e ON l.target = e.id
+        WHERE l.source = ? AND l.kind = 'ban' AND l.tombstone = 0
+    ''', (group_id,))
+    
+    bans = []
+    for row in await cursor.fetchall():
+        data = json.loads(row[1]) if row[1] else {}
+        profile = json.loads(row[4]) if row[4] else {}
+        bans.append({
+            "user_id": row[0],
+            "handle": row[3],
+            "name": profile.get("name", row[3]),
+            "reason": data.get("reason", ""),
+            "banned_by": data.get("by", ""),
+            "banned_at": row[2],
+        })
+    
+    return {"bans": bans}
+
+
+# ========== Content Moderation ==========
+
+@app.post("/api/groups/{group_id}/content/{content_id}/remove")
+async def remove_group_content(group_id: str, content_id: str, req: dict = None, current_user: str = Depends(require_auth)):
+    """Remove content from group (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    reason = req.get("reason", "") if req else ""
+    
+    # Check content belongs to group
+    content = await storage.get_content(content_id)
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    # Create moderation log
+    mod_event = LogEvent(
+        id=generate_log_event_id(group_id, 0),
+        actor=group_id,
+        seq=0,
+        prev=None,
+        op=OpType.DELETE,
+        object_type=ObjectType.CONTENT,
+        object_id=content_id,
+        payload={
+            "action": "remove",
+            "reason": reason,
+            "moderator": current_user,
+            "removed_at": datetime.utcnow().isoformat(),
+        },
+        ts=datetime.utcnow(),
+        sig=b"",
+    )
+    await storage.append_log(mod_event)
+    
+    # Soft delete the content
+    await storage.db.execute('''
+        UPDATE content SET tombstone = 1 WHERE id = ?
+    ''', (content_id,))
+    await storage.db.commit()
+    
+    return {"status": "removed", "content_id": content_id}
+
+
+@app.get("/api/groups/{group_id}/modlog")
+async def get_group_modlog(group_id: str, limit: int = 50, current_user: str = Depends(require_auth)):
+    """Get moderation log for group (admin/owner only)."""
+    if not await is_group_admin(group_id, current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    cursor = await storage.db.execute('''
+        SELECT * FROM log_events 
+        WHERE actor = ? AND op = 'delete'
+        ORDER BY ts DESC LIMIT ?
+    ''', (group_id, limit))
+    
+    logs = []
+    async for row in cursor:
+        logs.append({
+            "id": row["id"],
+            "op": row["op"],
+            "object_type": row["object_type"],
+            "object_id": row["object_id"],
+            "payload": json.loads(row["payload"]) if row["payload"] else {},
+            "ts": row["ts"],
+        })
+    
+    return {"items": logs}
+
+
 # ========== Publication & Subscription (Substack-like) Endpoints ==========
 
 # Pydantic models for publications

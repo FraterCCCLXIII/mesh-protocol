@@ -2,35 +2,43 @@
 """
 MESH Payment Service
 Stripe integration for subscriptions and creator payouts
+Includes STUB MODE for testing without Stripe
 """
 import os
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request, Header
+from fastapi import FastAPI, HTTPException, Request, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import aiosqlite
 
 # Stripe setup
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "sk_test_fake")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "whsec_fake")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 STRIPE_CONNECT_CLIENT_ID = os.environ.get("STRIPE_CONNECT_CLIENT_ID", "")
+
+# STUB MODE - for testing without Stripe
+STUB_MODE = os.environ.get("PAYMENTS_STUB_MODE", "true").lower() == "true"
 
 DB_PATH = os.environ.get("PAYMENTS_DB_PATH", "payments.db")
 db: Optional[aiosqlite.Connection] = None
 
 # Try to import stripe
-try:
-    import stripe
-    stripe.api_key = STRIPE_SECRET_KEY
-    STRIPE_AVAILABLE = True
-except ImportError:
-    STRIPE_AVAILABLE = False
-    print("[Payments] Stripe not installed - running in mock mode")
+STRIPE_AVAILABLE = False
+if STRIPE_SECRET_KEY and not STUB_MODE:
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        STRIPE_AVAILABLE = True
+    except ImportError:
+        print("[Payments] Stripe not installed - running in stub mode")
+
+if STUB_MODE or not STRIPE_AVAILABLE:
+    print("[Payments] Running in STUB MODE - all payments are simulated")
 
 async def init_db():
     global db
@@ -122,7 +130,166 @@ class ConnectOnboardRequest(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "payments", "stripe": STRIPE_AVAILABLE}
+    return {
+        "status": "healthy", 
+        "service": "payments", 
+        "stripe": STRIPE_AVAILABLE,
+        "stub_mode": STUB_MODE or not STRIPE_AVAILABLE,
+    }
+
+
+# ========== Stub Payment Endpoints ==========
+
+@app.post("/api/stub/pay")
+async def stub_pay(req: dict):
+    """Simulate a successful payment (STUB MODE)."""
+    subscriber_id = req.get("subscriber_id")
+    product_id = req.get("product_id")
+    amount = req.get("amount", 999)  # Default $9.99
+    
+    if not subscriber_id or not product_id:
+        raise HTTPException(400, "subscriber_id and product_id required")
+    
+    # Get product
+    cursor = await db.execute("SELECT * FROM products WHERE id = ?", (product_id,))
+    product = await cursor.fetchone()
+    if not product:
+        raise HTTPException(404, "Product not found")
+    
+    # Create subscription
+    sub_id = secrets.token_hex(16)
+    now = datetime.utcnow()
+    period_end = now + timedelta(days=30)
+    
+    await db.execute("""
+        INSERT INTO subscriptions (id, subscriber_id, publication_id, product_id, 
+            tier, status, current_period_start, current_period_end, created_at)
+        VALUES (?, ?, ?, ?, 'monthly', 'active', ?, ?, ?)
+    """, (sub_id, subscriber_id, product["publication_id"], product_id,
+          now.isoformat(), period_end.isoformat(), now.isoformat()))
+    await db.commit()
+    
+    return {
+        "status": "success",
+        "subscription_id": sub_id,
+        "amount": amount,
+        "period_end": period_end.isoformat(),
+        "stub": True,
+    }
+
+
+@app.post("/api/stub/refund")
+async def stub_refund(req: dict):
+    """Simulate a refund (STUB MODE)."""
+    subscription_id = req.get("subscription_id")
+    
+    if not subscription_id:
+        raise HTTPException(400, "subscription_id required")
+    
+    await db.execute(
+        "UPDATE subscriptions SET status = 'refunded' WHERE id = ?",
+        (subscription_id,)
+    )
+    await db.commit()
+    
+    return {"status": "refunded", "subscription_id": subscription_id, "stub": True}
+
+
+@app.get("/api/stub/transactions")
+async def stub_list_transactions(subscriber_id: str = Query(None)):
+    """List simulated transactions (STUB MODE)."""
+    query = """
+        SELECT s.*, p.name as product_name, p.price_monthly
+        FROM subscriptions s
+        JOIN products p ON s.product_id = p.id
+    """
+    params = []
+    
+    if subscriber_id:
+        query += " WHERE s.subscriber_id = ?"
+        params.append(subscriber_id)
+    
+    query += " ORDER BY s.created_at DESC LIMIT 100"
+    
+    cursor = await db.execute(query, params)
+    rows = await cursor.fetchall()
+    
+    transactions = []
+    for row in rows:
+        transactions.append({
+            "id": row["id"],
+            "subscriber_id": row["subscriber_id"],
+            "product_name": row["product_name"],
+            "amount": row["price_monthly"],
+            "status": row["status"],
+            "created_at": row["created_at"],
+            "stub": True,
+        })
+    
+    return {"transactions": transactions}
+
+
+@app.post("/api/stub/creator-payout")
+async def stub_creator_payout(req: dict):
+    """Simulate a creator payout (STUB MODE)."""
+    creator_id = req.get("creator_id")
+    amount = req.get("amount", 0)
+    
+    if not creator_id or amount <= 0:
+        raise HTTPException(400, "creator_id and positive amount required")
+    
+    payout_id = secrets.token_hex(16)
+    now = datetime.utcnow().isoformat()
+    
+    await db.execute("""
+        INSERT INTO payouts (id, creator_id, amount, status, created_at, completed_at)
+        VALUES (?, ?, ?, 'completed', ?, ?)
+    """, (payout_id, creator_id, amount, now, now))
+    await db.commit()
+    
+    return {
+        "status": "completed",
+        "payout_id": payout_id,
+        "amount": amount,
+        "stub": True,
+    }
+
+
+@app.get("/api/stub/balance/{creator_id}")
+async def stub_creator_balance(creator_id: str):
+    """Get simulated creator balance (STUB MODE)."""
+    # Calculate from subscriptions to their publications
+    cursor = await db.execute("""
+        SELECT SUM(p.price_monthly) as total
+        FROM subscriptions s
+        JOIN products p ON s.product_id = p.id
+        WHERE p.publication_id IN (
+            SELECT id FROM products WHERE publication_id IN (
+                SELECT id FROM publications WHERE owner_id = ?
+            )
+        )
+        AND s.status = 'active'
+    """, (creator_id,))
+    row = await cursor.fetchone()
+    
+    # Get paid out amount
+    cursor = await db.execute(
+        "SELECT SUM(amount) as paid FROM payouts WHERE creator_id = ? AND status = 'completed'",
+        (creator_id,)
+    )
+    paid_row = await cursor.fetchone()
+    
+    total_earned = row["total"] or 0
+    total_paid = paid_row["paid"] or 0
+    balance = total_earned - total_paid
+    
+    return {
+        "creator_id": creator_id,
+        "total_earned": total_earned,
+        "total_paid": total_paid,
+        "balance": balance,
+        "stub": True,
+    }
 
 # Products (subscription tiers)
 @app.post("/api/products")
