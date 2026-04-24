@@ -401,6 +401,20 @@ export class VaultClient {
   }
 
   /**
+   * Get current user ID
+   */
+  getUserId(): string | null {
+    return this.userId;
+  }
+
+  /**
+   * Get access token
+   */
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  /**
    * Set access token (for restoring session)
    */
   setAccessToken(token: string, userId: string): void {
