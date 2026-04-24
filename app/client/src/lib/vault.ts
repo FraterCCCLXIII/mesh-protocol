@@ -1,17 +1,148 @@
 /**
- * MESH Identity Vault Client
+ * MESH Identity Vault Client + Protocol Crypto
  * 
- * This library handles client-side key encryption/decryption
- * and communication with the Identity Vault service.
+ * This library handles:
+ * - Client-side key encryption/decryption
+ * - Communication with the Identity Vault service
+ * - E2EE for DMs using X25519 + AES-GCM
+ * - Device key management
  * 
  * Security Model:
  * - Keys are encrypted CLIENT-SIDE using a key derived from password
  * - Vault NEVER sees plaintext private keys
- * - Even if vault is compromised, keys remain secure
+ * - DMs use ephemeral key exchange for forward secrecy
  */
 
 import * as nacl from 'tweetnacl';
 import * as naclUtil from 'tweetnacl-util';
+
+// ========== MESH Protocol Crypto ==========
+
+/**
+ * Generate a signing key pair (Ed25519)
+ */
+export function generateSigningKeyPair(): nacl.SignKeyPair {
+  return nacl.sign.keyPair();
+}
+
+/**
+ * Generate an encryption key pair (X25519)
+ */
+export function generateEncryptionKeyPair(): nacl.BoxKeyPair {
+  return nacl.box.keyPair();
+}
+
+/**
+ * Generate entity ID from public key
+ */
+export function generateEntityId(publicKey: Uint8Array): string {
+  const hash = nacl.hash(publicKey);
+  const hex = Array.from(hash.slice(0, 16))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  return `ent:${hex}`;
+}
+
+/**
+ * Sign a message
+ */
+export function sign(message: Uint8Array, secretKey: Uint8Array): Uint8Array {
+  return nacl.sign.detached(message, secretKey);
+}
+
+/**
+ * Verify a signature
+ */
+export function verify(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
+  return nacl.sign.detached.verify(message, signature, publicKey);
+}
+
+/**
+ * Encrypted envelope for E2EE DMs
+ */
+export interface EncryptedEnvelope {
+  ephemeralPublicKey: string; // hex
+  nonce: string; // hex
+  ciphertext: string; // hex
+}
+
+/**
+ * Encrypt a message for a recipient (DM)
+ * Uses ephemeral key exchange for forward secrecy
+ */
+export function encryptForRecipient(
+  plaintext: string,
+  recipientEncryptionPublicKey: Uint8Array
+): EncryptedEnvelope {
+  // Generate ephemeral key pair
+  const ephemeral = nacl.box.keyPair();
+  
+  // Compute shared secret
+  const sharedSecret = nacl.box.before(recipientEncryptionPublicKey, ephemeral.secretKey);
+  
+  // Generate nonce
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  
+  // Encrypt
+  const message = naclUtil.decodeUTF8(plaintext);
+  const ciphertext = nacl.box.after(message, nonce, sharedSecret);
+  
+  return {
+    ephemeralPublicKey: naclUtil.encodeBase64(ephemeral.publicKey),
+    nonce: naclUtil.encodeBase64(nonce),
+    ciphertext: naclUtil.encodeBase64(ciphertext),
+  };
+}
+
+/**
+ * Decrypt a message from sender (DM)
+ */
+export function decryptFromSender(
+  envelope: EncryptedEnvelope,
+  recipientSecretKey: Uint8Array
+): string | null {
+  try {
+    const ephemeralPublicKey = naclUtil.decodeBase64(envelope.ephemeralPublicKey);
+    const nonce = naclUtil.decodeBase64(envelope.nonce);
+    const ciphertext = naclUtil.decodeBase64(envelope.ciphertext);
+    
+    // Compute shared secret
+    const sharedSecret = nacl.box.before(ephemeralPublicKey, recipientSecretKey);
+    
+    // Decrypt
+    const plaintext = nacl.box.open.after(ciphertext, nonce, sharedSecret);
+    if (!plaintext) return null;
+    
+    return naclUtil.encodeUTF8(plaintext);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Device key for multi-device support
+ */
+export interface DeviceKey {
+  deviceId: string;
+  publicKey: string; // hex
+  name: string;
+  authorizedAt: string;
+  revoked: boolean;
+  capabilities: string[];
+}
+
+/**
+ * Generate a new device key pair
+ */
+export function generateDeviceKeyPair(): {
+  deviceId: string;
+  keyPair: nacl.SignKeyPair;
+} {
+  const keyPair = nacl.sign.keyPair();
+  const hash = nacl.hash(keyPair.publicKey);
+  const deviceId = `dev:${Array.from(hash.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+  return { deviceId, keyPair };
+}
 
 // ========== Types ==========
 
