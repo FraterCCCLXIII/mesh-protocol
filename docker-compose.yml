@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Core Relay Node
+  relay:
+    build:
+      context: ./app/server
+      dockerfile: Dockerfile
+    ports:
+      - "12000:12000"
+    environment:
+      - MESH_NODE_ID=relay1
+      - MESH_NODE_URL=http://relay:12000
+      - DATABASE_URL=sqlite:///./data/mesh.db
+    volumes:
+      - relay_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Identity Vault
+  vault:
+    build:
+      context: ./services/identity-vault
+      dockerfile: Dockerfile
+    ports:
+      - "12003:12003"
+    environment:
+      - VAULT_SECRET=${VAULT_SECRET:-change-me-in-production}
+      - VAULT_DATABASE_URL=sqlite:///./data/vault.db
+      - VAULT_SMTP_HOST=${SMTP_HOST:-}
+      - VAULT_SMTP_PORT=${SMTP_PORT:-587}
+      - VAULT_SMTP_USER=${SMTP_USER:-}
+      - VAULT_SMTP_PASS=${SMTP_PASS:-}
+    volumes:
+      - vault_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Service
+  notification:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    ports:
+      - "12004:12004"
+    environment:
+      - NOTIF_DB_PATH=/app/data/notifications.db
+    volumes:
+      - notification_data:/app/data
+    depends_on:
+      - relay
+
+  # Media Service
+  media:
+    build:
+      context: ./services/media
+      dockerfile: Dockerfile
+    ports:
+      - "12005:12005"
+    environment:
+      - MEDIA_DB_PATH=/app/data/media.db
+      - MEDIA_STORAGE_PATH=/app/data/storage
+    volumes:
+      - media_data:/app/data
+    depends_on:
+      - relay
+
+  # Moderation Service
+  moderation:
+    build:
+      context: ./services/moderation
+      dockerfile: Dockerfile
+    ports:
+      - "12006:12006"
+    environment:
+      - MOD_DB_PATH=/app/data/moderation.db
+    volumes:
+      - moderation_data:/app/data
+    depends_on:
+      - relay
+
+  # Payment Service
+  payments:
+    build:
+      context: ./services/payments
+      dockerfile: Dockerfile
+    ports:
+      - "12007:12007"
+    environment:
+      - PAYMENTS_DB_PATH=/app/data/payments.db
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_fake}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-whsec_fake}
+    volumes:
+      - payments_data:/app/data
+    depends_on:
+      - relay
+
+  # Web Client
+  client:
+    build:
+      context: ./app/client
+      dockerfile: Dockerfile
+    ports:
+      - "12001:80"
+    environment:
+      - VITE_API_URL=http://relay:12000
+      - VITE_VAULT_URL=http://vault:12003
+    depends_on:
+      - relay
+      - vault
+
+volumes:
+  relay_data:
+  vault_data:
+  notification_data:
+  media_data:
+  moderation_data:
+  payments_data:
