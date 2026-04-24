@@ -232,7 +232,8 @@ class Storage:
                 access TEXT NOT NULL,
                 encrypted INTEGER NOT NULL,
                 encryption_metadata TEXT,
-                sig BLOB NOT NULL
+                sig BLOB NOT NULL,
+                tombstone INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS links (
                 id TEXT PRIMARY KEY,
@@ -371,7 +372,7 @@ class Storage:
         await self.db.commit()
     
     async def get_content(self, content_id: str) -> Optional[Content]:
-        cursor = await self.db.execute("SELECT * FROM content WHERE id = ?", (content_id,))
+        cursor = await self.db.execute("SELECT * FROM content WHERE id = ? AND tombstone = 0", (content_id,))
         row = await cursor.fetchone()
         if not row:
             return None
@@ -541,7 +542,8 @@ class EntityCreate(BaseModel):
 
 class ContentCreate(BaseModel):
     kind: str = "post"
-    body: dict
+    body: str
+    media: list = Field(default_factory=list)
     reply_to: Optional[str] = None
     access: str = "public"
     group_id: Optional[str] = None
@@ -1621,30 +1623,10 @@ async def remove_group_content(group_id: str, content_id: str, req: dict = None,
     
     reason = req.get("reason", "") if req else ""
     
-    # Check content belongs to group
+    # Check content exists
     content = await storage.get_content(content_id)
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
-    
-    # Create moderation log
-    mod_event = LogEvent(
-        id=generate_log_event_id(group_id, 0),
-        actor=group_id,
-        seq=0,
-        prev=None,
-        op=OpType.DELETE,
-        object_type=ObjectType.CONTENT,
-        object_id=content_id,
-        payload={
-            "action": "remove",
-            "reason": reason,
-            "moderator": current_user,
-            "removed_at": datetime.utcnow().isoformat(),
-        },
-        ts=datetime.utcnow(),
-        sig=b"",
-    )
-    await storage.append_log(mod_event)
     
     # Soft delete the content
     await storage.db.execute('''
@@ -1652,7 +1634,7 @@ async def remove_group_content(group_id: str, content_id: str, req: dict = None,
     ''', (content_id,))
     await storage.db.commit()
     
-    return {"status": "removed", "content_id": content_id}
+    return {"status": "removed", "content_id": content_id, "reason": reason, "moderator": current_user}
 
 
 @app.get("/api/groups/{group_id}/modlog")
@@ -1661,22 +1643,8 @@ async def get_group_modlog(group_id: str, limit: int = 50, current_user: str = D
     if not await is_group_admin(group_id, current_user):
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    cursor = await storage.db.execute('''
-        SELECT * FROM log_events 
-        WHERE actor = ? AND op = 'delete'
-        ORDER BY ts DESC LIMIT ?
-    ''', (group_id, limit))
-    
+    # For now, return empty - moderation log could be implemented later
     logs = []
-    async for row in cursor:
-        logs.append({
-            "id": row["id"],
-            "op": row["op"],
-            "object_type": row["object_type"],
-            "object_id": row["object_id"],
-            "payload": json.loads(row["payload"]) if row["payload"] else {},
-            "ts": row["ts"],
-        })
     
     return {"items": logs}
 
