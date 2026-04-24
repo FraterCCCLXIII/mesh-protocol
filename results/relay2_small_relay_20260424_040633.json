@@ -1,0 +1,515 @@
+{
+  "scenario": "Small Relay",
+  "duration": "1:00:00",
+  "final_metrics": {
+    "identity_count": 100,
+    "event_count": 35,
+    "state_count": 100,
+    "attestation_count": 3,
+    "snapshot_count": 0,
+    "view_definition_count": 2,
+    "total_objects": 240,
+    "total_size_bytes": 71971,
+    "total_size_mb": 0.06863689422607422,
+    "sequence": 240,
+    "event_type_counts": {
+      "post": 6,
+      "reaction": 26,
+      "follow.add": 2,
+      "action.request": 1
+    },
+    "actor_count": 30
+  },
+  "view_stats": {
+    "total_executions": 12,
+    "avg_time_ms": 0.09959936141967773,
+    "p50_time_ms": 0.14543533325195312,
+    "p95_time_ms": 0.1590251922607422,
+    "deterministic_rate": 1.0
+  },
+  "metrics_history": [
+    {
+      "identity_count": 100,
+      "event_count": 0,
+      "state_count": 100,
+      "attestation_count": 0,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 202,
+      "total_size_bytes": 59502,
+      "total_size_mb": 0.05674552917480469,
+      "sequence": 202,
+      "event_type_counts": {},
+      "actor_count": 0,
+      "timestamp": "2026-04-24T04:06:33.372910",
+      "elapsed_seconds": 0.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 0,
+      "total_follows": 0,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 2,
+      "state_count": 100,
+      "attestation_count": 0,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 204,
+      "total_size_bytes": 60142,
+      "total_size_mb": 0.05735588073730469,
+      "sequence": 204,
+      "event_type_counts": {
+        "post": 1,
+        "reaction": 1
+      },
+      "actor_count": 2,
+      "timestamp": "2026-04-24T04:11:33.372910",
+      "elapsed_seconds": 300.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 1,
+      "total_follows": 0,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 3,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 206,
+      "total_size_bytes": 60799,
+      "total_size_mb": 0.057982444763183594,
+      "sequence": 206,
+      "event_type_counts": {
+        "post": 2,
+        "reaction": 1
+      },
+      "actor_count": 3,
+      "timestamp": "2026-04-24T04:16:33.372910",
+      "elapsed_seconds": 600.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 2,
+      "total_follows": 0,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 10,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 213,
+      "total_size_bytes": 63057,
+      "total_size_mb": 0.060135841369628906,
+      "sequence": 213,
+      "event_type_counts": {
+        "post": 2,
+        "reaction": 7,
+        "follow.add": 1
+      },
+      "actor_count": 9,
+      "timestamp": "2026-04-24T04:21:33.372910",
+      "elapsed_seconds": 900.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 2,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 11,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 214,
+      "total_size_bytes": 63376,
+      "total_size_mb": 0.0604400634765625,
+      "sequence": 214,
+      "event_type_counts": {
+        "post": 2,
+        "reaction": 8,
+        "follow.add": 1
+      },
+      "actor_count": 10,
+      "timestamp": "2026-04-24T04:26:33.372910",
+      "elapsed_seconds": 1200.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 2,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 15,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 218,
+      "total_size_bytes": 64807,
+      "total_size_mb": 0.061804771423339844,
+      "sequence": 218,
+      "event_type_counts": {
+        "post": 2,
+        "reaction": 11,
+        "follow.add": 1,
+        "action.request": 1
+      },
+      "actor_count": 13,
+      "timestamp": "2026-04-24T04:31:33.372910",
+      "elapsed_seconds": 1500.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 3,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 16,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 219,
+      "total_size_bytes": 65132,
+      "total_size_mb": 0.062114715576171875,
+      "sequence": 219,
+      "event_type_counts": {
+        "post": 3,
+        "reaction": 11,
+        "follow.add": 1,
+        "action.request": 1
+      },
+      "actor_count": 14,
+      "timestamp": "2026-04-24T04:36:33.372910",
+      "elapsed_seconds": 1800.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 4,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 18,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 221,
+      "total_size_bytes": 65770,
+      "total_size_mb": 0.06272315979003906,
+      "sequence": 221,
+      "event_type_counts": {
+        "post": 3,
+        "reaction": 13,
+        "follow.add": 1,
+        "action.request": 1
+      },
+      "actor_count": 16,
+      "timestamp": "2026-04-24T04:41:33.372910",
+      "elapsed_seconds": 2100.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 4,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 20,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 223,
+      "total_size_bytes": 66419,
+      "total_size_mb": 0.06334209442138672,
+      "sequence": 223,
+      "event_type_counts": {
+        "post": 4,
+        "reaction": 14,
+        "follow.add": 1,
+        "action.request": 1
+      },
+      "actor_count": 18,
+      "timestamp": "2026-04-24T04:46:33.372910",
+      "elapsed_seconds": 2400.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 5,
+      "total_follows": 1,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 23,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 226,
+      "total_size_bytes": 67355,
+      "total_size_mb": 0.06423473358154297,
+      "sequence": 226,
+      "event_type_counts": {
+        "post": 4,
+        "reaction": 16,
+        "follow.add": 2,
+        "action.request": 1
+      },
+      "actor_count": 21,
+      "timestamp": "2026-04-24T04:51:33.372910",
+      "elapsed_seconds": 2700.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 5,
+      "total_follows": 2,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 25,
+      "state_count": 100,
+      "attestation_count": 1,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 228,
+      "total_size_bytes": 68041,
+      "total_size_mb": 0.06488895416259766,
+      "sequence": 228,
+      "event_type_counts": {
+        "post": 5,
+        "reaction": 17,
+        "follow.add": 2,
+        "action.request": 1
+      },
+      "actor_count": 22,
+      "timestamp": "2026-04-24T04:56:33.372910",
+      "elapsed_seconds": 3000.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 6,
+      "total_follows": 2,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    },
+    {
+      "identity_count": 100,
+      "event_count": 31,
+      "state_count": 100,
+      "attestation_count": 2,
+      "snapshot_count": 0,
+      "view_definition_count": 2,
+      "total_objects": 235,
+      "total_size_bytes": 70287,
+      "total_size_mb": 0.0670309066772461,
+      "sequence": 235,
+      "event_type_counts": {
+        "post": 5,
+        "reaction": 23,
+        "follow.add": 2,
+        "action.request": 1
+      },
+      "actor_count": 28,
+      "timestamp": "2026-04-24T05:01:33.372910",
+      "elapsed_seconds": 3300.0,
+      "total_actors": 100,
+      "by_type": {
+        "user": 80,
+        "agent": 5,
+        "curator": 10,
+        "indexer": 3,
+        "moderator": 2
+      },
+      "total_events": 6,
+      "total_follows": 2,
+      "total_views": 2,
+      "total_view_subscriptions": 0
+    }
+  ],
+  "view_executions": [
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:06:33.372910",
+      "result_count": 0,
+      "computation_time_ms": 0.15807151794433594,
+      "deterministic": true,
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:06:33.372910",
+      "result_count": 0,
+      "computation_time_ms": 0.04410743713378906,
+      "deterministic": true,
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:16:33.372910",
+      "result_count": 0,
+      "computation_time_ms": 0.14543533325195312,
+      "deterministic": true,
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:16:33.372910",
+      "result_count": 0,
+      "computation_time_ms": 0.043392181396484375,
+      "deterministic": true,
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:26:33.372910",
+      "result_count": 2,
+      "computation_time_ms": 0.15616416931152344,
+      "deterministic": true,
+      "result_hash": "7842758b87cfc50b"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:26:33.372910",
+      "result_count": 0,
+      "computation_time_ms": 0.041484832763671875,
+      "deterministic": true,
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:36:33.372910",
+      "result_count": 4,
+      "computation_time_ms": 0.14829635620117188,
+      "deterministic": true,
+      "result_hash": "be89a704689d05f4"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:36:33.372910",
+      "result_count": 2,
+      "computation_time_ms": 0.050067901611328125,
+      "deterministic": true,
+      "result_hash": "a7b081af5ce8ea4b"
+    },
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:46:33.372910",
+      "result_count": 6,
+      "computation_time_ms": 0.1590251922607422,
+      "deterministic": true,
+      "result_hash": "5d3bf27adb7da263"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:46:33.372910",
+      "result_count": 2,
+      "computation_time_ms": 0.049591064453125,
+      "deterministic": true,
+      "result_hash": "a7b081af5ce8ea4b"
+    },
+    {
+      "view_id": "relay:view:global-timeline",
+      "timestamp": "2026-04-24T04:56:33.372910",
+      "result_count": 7,
+      "computation_time_ms": 0.15544891357421875,
+      "deterministic": true,
+      "result_hash": "4e1184898865aa9f"
+    },
+    {
+      "view_id": "relay:view:top-posts",
+      "timestamp": "2026-04-24T04:56:33.372910",
+      "result_count": 2,
+      "computation_time_ms": 0.04410743713378906,
+      "deterministic": true,
+      "result_hash": "a7b081af5ce8ea4b"
+    }
+  ]
+}

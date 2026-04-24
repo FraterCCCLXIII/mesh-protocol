@@ -1,0 +1,1434 @@
+{
+  "scenario": "Full v1.4-1",
+  "duration": "6:00:00",
+  "final_metrics": {
+    "identity_count": 600,
+    "actor_count": 505,
+    "event_count": 1243,
+    "state_count": 600,
+    "channel_count": 0,
+    "feed_definition_count": 6,
+    "total_size_bytes": 920298,
+    "total_size_mb": 0.8776645660400391,
+    "sequence": 2449,
+    "event_type_counts": {
+      "follow.add": 85,
+      "post": 224,
+      "reaction": 694,
+      "action.request": 80,
+      "action.commit": 80,
+      "action.result": 80
+    }
+  },
+  "feed_stats": {
+    "total_reductions": 17,
+    "avg_time_ms": 0.04294339348288143,
+    "p50_time_ms": 0.03933906555175781,
+    "p95_time_ms": 0.06127357482910156,
+    "verification_rate": 1.0
+  },
+  "action_stats": {
+    "total_verifications": 11,
+    "valid_rate": 1.0
+  },
+  "metrics_history": [
+    {
+      "identity_count": 600,
+      "actor_count": 0,
+      "event_count": 0,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 0,
+      "total_size_bytes": 489730,
+      "total_size_mb": 0.4670429229736328,
+      "sequence": 1200,
+      "event_type_counts": {},
+      "timestamp": "2026-04-24T04:17:03.471660",
+      "elapsed_seconds": 0.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 0,
+      "total_follows": 0,
+      "total_feeds": 0,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 24,
+      "event_count": 28,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 499533,
+      "total_size_mb": 0.4763917922973633,
+      "sequence": 1229,
+      "event_type_counts": {
+        "follow.add": 4,
+        "post": 5,
+        "reaction": 13,
+        "action.request": 2,
+        "action.commit": 2,
+        "action.result": 2
+      },
+      "timestamp": "2026-04-24T04:27:03.471660",
+      "elapsed_seconds": 600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 9,
+      "total_follows": 4,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 48,
+      "event_count": 63,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 511390,
+      "total_size_mb": 0.4876995086669922,
+      "sequence": 1264,
+      "event_type_counts": {
+        "follow.add": 4,
+        "post": 14,
+        "reaction": 27,
+        "action.request": 6,
+        "action.commit": 6,
+        "action.result": 6
+      },
+      "timestamp": "2026-04-24T04:37:03.471660",
+      "elapsed_seconds": 1200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 26,
+      "total_follows": 4,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 69,
+      "event_count": 91,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 520741,
+      "total_size_mb": 0.49661731719970703,
+      "sequence": 1292,
+      "event_type_counts": {
+        "follow.add": 5,
+        "post": 21,
+        "reaction": 38,
+        "action.request": 9,
+        "action.commit": 9,
+        "action.result": 9
+      },
+      "timestamp": "2026-04-24T04:47:03.471660",
+      "elapsed_seconds": 1800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 39,
+      "total_follows": 5,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 99,
+      "event_count": 128,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 532996,
+      "total_size_mb": 0.5083045959472656,
+      "sequence": 1329,
+      "event_type_counts": {
+        "follow.add": 8,
+        "post": 25,
+        "reaction": 62,
+        "action.request": 11,
+        "action.commit": 11,
+        "action.result": 11
+      },
+      "timestamp": "2026-04-24T04:57:03.471660",
+      "elapsed_seconds": 2400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 47,
+      "total_follows": 8,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 127,
+      "event_count": 161,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 543530,
+      "total_size_mb": 0.5183506011962891,
+      "sequence": 1362,
+      "event_type_counts": {
+        "follow.add": 10,
+        "post": 32,
+        "reaction": 86,
+        "action.request": 11,
+        "action.commit": 11,
+        "action.result": 11
+      },
+      "timestamp": "2026-04-24T05:07:03.471660",
+      "elapsed_seconds": 3000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 54,
+      "total_follows": 10,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 143,
+      "event_count": 184,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 551190,
+      "total_size_mb": 0.5256557464599609,
+      "sequence": 1385,
+      "event_type_counts": {
+        "follow.add": 10,
+        "post": 37,
+        "reaction": 101,
+        "action.request": 12,
+        "action.commit": 12,
+        "action.result": 12
+      },
+      "timestamp": "2026-04-24T05:17:03.471660",
+      "elapsed_seconds": 3600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 61,
+      "total_follows": 10,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 169,
+      "event_count": 220,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 562830,
+      "total_size_mb": 0.5367565155029297,
+      "sequence": 1421,
+      "event_type_counts": {
+        "follow.add": 15,
+        "post": 45,
+        "reaction": 118,
+        "action.request": 14,
+        "action.commit": 14,
+        "action.result": 14
+      },
+      "timestamp": "2026-04-24T05:27:03.471660",
+      "elapsed_seconds": 4200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 73,
+      "total_follows": 15,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 192,
+      "event_count": 262,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 577294,
+      "total_size_mb": 0.5505504608154297,
+      "sequence": 1463,
+      "event_type_counts": {
+        "follow.add": 15,
+        "post": 52,
+        "reaction": 144,
+        "action.request": 17,
+        "action.commit": 17,
+        "action.result": 17
+      },
+      "timestamp": "2026-04-24T05:37:03.471660",
+      "elapsed_seconds": 4800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 86,
+      "total_follows": 15,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 208,
+      "event_count": 296,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 588935,
+      "total_size_mb": 0.5616521835327148,
+      "sequence": 1497,
+      "event_type_counts": {
+        "follow.add": 17,
+        "post": 59,
+        "reaction": 160,
+        "action.request": 20,
+        "action.commit": 20,
+        "action.result": 20
+      },
+      "timestamp": "2026-04-24T05:47:03.471660",
+      "elapsed_seconds": 5400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 99,
+      "total_follows": 17,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 231,
+      "event_count": 330,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 1,
+      "total_size_bytes": 600098,
+      "total_size_mb": 0.5722980499267578,
+      "sequence": 1531,
+      "event_type_counts": {
+        "follow.add": 21,
+        "post": 64,
+        "reaction": 182,
+        "action.request": 21,
+        "action.commit": 21,
+        "action.result": 21
+      },
+      "timestamp": "2026-04-24T05:57:03.471660",
+      "elapsed_seconds": 6000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 106,
+      "total_follows": 21,
+      "total_feeds": 1,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 247,
+      "event_count": 361,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 2,
+      "total_size_bytes": 611102,
+      "total_size_mb": 0.5827922821044922,
+      "sequence": 1563,
+      "event_type_counts": {
+        "follow.add": 24,
+        "post": 71,
+        "reaction": 200,
+        "action.request": 22,
+        "action.commit": 22,
+        "action.result": 22
+      },
+      "timestamp": "2026-04-24T06:07:03.471660",
+      "elapsed_seconds": 6600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 115,
+      "total_follows": 24,
+      "total_feeds": 2,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 277,
+      "event_count": 413,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 2,
+      "total_size_bytes": 628884,
+      "total_size_mb": 0.5997505187988281,
+      "sequence": 1615,
+      "event_type_counts": {
+        "follow.add": 26,
+        "post": 83,
+        "reaction": 220,
+        "action.request": 28,
+        "action.commit": 28,
+        "action.result": 28
+      },
+      "timestamp": "2026-04-24T06:17:03.471660",
+      "elapsed_seconds": 7200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 139,
+      "total_follows": 26,
+      "total_feeds": 2,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 299,
+      "event_count": 459,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 2,
+      "total_size_bytes": 644958,
+      "total_size_mb": 0.6150798797607422,
+      "sequence": 1661,
+      "event_type_counts": {
+        "follow.add": 27,
+        "post": 87,
+        "reaction": 252,
+        "action.request": 31,
+        "action.commit": 31,
+        "action.result": 31
+      },
+      "timestamp": "2026-04-24T06:27:03.471660",
+      "elapsed_seconds": 7800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 149,
+      "total_follows": 27,
+      "total_feeds": 2,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 317,
+      "event_count": 495,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 2,
+      "total_size_bytes": 657351,
+      "total_size_mb": 0.6268987655639648,
+      "sequence": 1697,
+      "event_type_counts": {
+        "follow.add": 31,
+        "post": 92,
+        "reaction": 267,
+        "action.request": 35,
+        "action.commit": 35,
+        "action.result": 35
+      },
+      "timestamp": "2026-04-24T06:37:03.471660",
+      "elapsed_seconds": 8400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 162,
+      "total_follows": 31,
+      "total_feeds": 2,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 329,
+      "event_count": 527,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 2,
+      "total_size_bytes": 668166,
+      "total_size_mb": 0.6372127532958984,
+      "sequence": 1729,
+      "event_type_counts": {
+        "follow.add": 38,
+        "post": 95,
+        "reaction": 283,
+        "action.request": 37,
+        "action.commit": 37,
+        "action.result": 37
+      },
+      "timestamp": "2026-04-24T06:47:03.471660",
+      "elapsed_seconds": 9000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 169,
+      "total_follows": 38,
+      "total_feeds": 2,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 352,
+      "event_count": 574,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 3,
+      "total_size_bytes": 684927,
+      "total_size_mb": 0.6531972885131836,
+      "sequence": 1777,
+      "event_type_counts": {
+        "follow.add": 42,
+        "post": 100,
+        "reaction": 315,
+        "action.request": 39,
+        "action.commit": 39,
+        "action.result": 39
+      },
+      "timestamp": "2026-04-24T06:57:03.471660",
+      "elapsed_seconds": 9600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 178,
+      "total_follows": 42,
+      "total_feeds": 3,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 365,
+      "event_count": 606,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 3,
+      "total_size_bytes": 695611,
+      "total_size_mb": 0.663386344909668,
+      "sequence": 1809,
+      "event_type_counts": {
+        "follow.add": 44,
+        "post": 107,
+        "reaction": 338,
+        "action.request": 39,
+        "action.commit": 39,
+        "action.result": 39
+      },
+      "timestamp": "2026-04-24T07:07:03.471660",
+      "elapsed_seconds": 10200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 185,
+      "total_follows": 44,
+      "total_feeds": 3,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 379,
+      "event_count": 643,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 4,
+      "total_size_bytes": 708977,
+      "total_size_mb": 0.6761331558227539,
+      "sequence": 1847,
+      "event_type_counts": {
+        "follow.add": 47,
+        "post": 114,
+        "reaction": 359,
+        "action.request": 41,
+        "action.commit": 41,
+        "action.result": 41
+      },
+      "timestamp": "2026-04-24T07:17:03.471660",
+      "elapsed_seconds": 10800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 196,
+      "total_follows": 47,
+      "total_feeds": 4,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 392,
+      "event_count": 678,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 4,
+      "total_size_bytes": 720603,
+      "total_size_mb": 0.687220573425293,
+      "sequence": 1882,
+      "event_type_counts": {
+        "follow.add": 51,
+        "post": 121,
+        "reaction": 383,
+        "action.request": 41,
+        "action.commit": 41,
+        "action.result": 41
+      },
+      "timestamp": "2026-04-24T07:27:03.471660",
+      "elapsed_seconds": 11400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 203,
+      "total_follows": 51,
+      "total_feeds": 4,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 405,
+      "event_count": 713,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 733309,
+      "total_size_mb": 0.6993379592895508,
+      "sequence": 1918,
+      "event_type_counts": {
+        "follow.add": 52,
+        "post": 128,
+        "reaction": 407,
+        "action.request": 42,
+        "action.commit": 42,
+        "action.result": 42
+      },
+      "timestamp": "2026-04-24T07:37:03.471660",
+      "elapsed_seconds": 12000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 212,
+      "total_follows": 52,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 420,
+      "event_count": 753,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 747111,
+      "total_size_mb": 0.7125005722045898,
+      "sequence": 1958,
+      "event_type_counts": {
+        "follow.add": 54,
+        "post": 136,
+        "reaction": 428,
+        "action.request": 45,
+        "action.commit": 45,
+        "action.result": 45
+      },
+      "timestamp": "2026-04-24T07:47:03.471660",
+      "elapsed_seconds": 12600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 226,
+      "total_follows": 54,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 430,
+      "event_count": 787,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 758662,
+      "total_size_mb": 0.7235164642333984,
+      "sequence": 1992,
+      "event_type_counts": {
+        "follow.add": 56,
+        "post": 146,
+        "reaction": 444,
+        "action.request": 47,
+        "action.commit": 47,
+        "action.result": 47
+      },
+      "timestamp": "2026-04-24T07:57:03.471660",
+      "elapsed_seconds": 13200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 240,
+      "total_follows": 56,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 436,
+      "event_count": 807,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 765567,
+      "total_size_mb": 0.7301015853881836,
+      "sequence": 2012,
+      "event_type_counts": {
+        "follow.add": 56,
+        "post": 151,
+        "reaction": 456,
+        "action.request": 48,
+        "action.commit": 48,
+        "action.result": 48
+      },
+      "timestamp": "2026-04-24T08:07:03.471660",
+      "elapsed_seconds": 13800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 247,
+      "total_follows": 56,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 444,
+      "event_count": 839,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 776372,
+      "total_size_mb": 0.7404060363769531,
+      "sequence": 2044,
+      "event_type_counts": {
+        "follow.add": 61,
+        "post": 155,
+        "reaction": 479,
+        "action.request": 48,
+        "action.commit": 48,
+        "action.result": 48
+      },
+      "timestamp": "2026-04-24T08:17:03.471660",
+      "elapsed_seconds": 14400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 251,
+      "total_follows": 61,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 452,
+      "event_count": 880,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 791012,
+      "total_size_mb": 0.7543678283691406,
+      "sequence": 2085,
+      "event_type_counts": {
+        "follow.add": 64,
+        "post": 160,
+        "reaction": 500,
+        "action.request": 52,
+        "action.commit": 52,
+        "action.result": 52
+      },
+      "timestamp": "2026-04-24T08:27:03.471660",
+      "elapsed_seconds": 15000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 264,
+      "total_follows": 64,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 459,
+      "event_count": 913,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 802800,
+      "total_size_mb": 0.7656097412109375,
+      "sequence": 2118,
+      "event_type_counts": {
+        "follow.add": 64,
+        "post": 166,
+        "reaction": 518,
+        "action.request": 55,
+        "action.commit": 55,
+        "action.result": 55
+      },
+      "timestamp": "2026-04-24T08:37:03.471660",
+      "elapsed_seconds": 15600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 276,
+      "total_follows": 64,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 461,
+      "event_count": 949,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 815533,
+      "total_size_mb": 0.7777528762817383,
+      "sequence": 2154,
+      "event_type_counts": {
+        "follow.add": 66,
+        "post": 173,
+        "reaction": 539,
+        "action.request": 57,
+        "action.commit": 57,
+        "action.result": 57
+      },
+      "timestamp": "2026-04-24T08:47:03.471660",
+      "elapsed_seconds": 16200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 287,
+      "total_follows": 66,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 465,
+      "event_count": 982,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 826770,
+      "total_size_mb": 0.7884693145751953,
+      "sequence": 2187,
+      "event_type_counts": {
+        "follow.add": 72,
+        "post": 177,
+        "reaction": 562,
+        "action.request": 57,
+        "action.commit": 57,
+        "action.result": 57
+      },
+      "timestamp": "2026-04-24T08:57:03.471660",
+      "elapsed_seconds": 16800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 291,
+      "total_follows": 72,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 469,
+      "event_count": 1019,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 839719,
+      "total_size_mb": 0.8008184432983398,
+      "sequence": 2224,
+      "event_type_counts": {
+        "follow.add": 76,
+        "post": 183,
+        "reaction": 583,
+        "action.request": 59,
+        "action.commit": 59,
+        "action.result": 59
+      },
+      "timestamp": "2026-04-24T09:07:03.471660",
+      "elapsed_seconds": 17400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 301,
+      "total_follows": 76,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 475,
+      "event_count": 1046,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 849351,
+      "total_size_mb": 0.8100042343139648,
+      "sequence": 2251,
+      "event_type_counts": {
+        "follow.add": 76,
+        "post": 189,
+        "reaction": 595,
+        "action.request": 62,
+        "action.commit": 62,
+        "action.result": 62
+      },
+      "timestamp": "2026-04-24T09:17:03.471660",
+      "elapsed_seconds": 18000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 313,
+      "total_follows": 76,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 483,
+      "event_count": 1080,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 5,
+      "total_size_bytes": 861460,
+      "total_size_mb": 0.8215522766113281,
+      "sequence": 2285,
+      "event_type_counts": {
+        "follow.add": 76,
+        "post": 195,
+        "reaction": 614,
+        "action.request": 65,
+        "action.commit": 65,
+        "action.result": 65
+      },
+      "timestamp": "2026-04-24T09:27:03.471660",
+      "elapsed_seconds": 18600.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 325,
+      "total_follows": 76,
+      "total_feeds": 5,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 490,
+      "event_count": 1113,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 6,
+      "total_size_bytes": 873989,
+      "total_size_mb": 0.833500862121582,
+      "sequence": 2319,
+      "event_type_counts": {
+        "follow.add": 77,
+        "post": 200,
+        "reaction": 632,
+        "action.request": 68,
+        "action.commit": 68,
+        "action.result": 68
+      },
+      "timestamp": "2026-04-24T09:37:03.471660",
+      "elapsed_seconds": 19200.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 336,
+      "total_follows": 77,
+      "total_feeds": 6,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 497,
+      "event_count": 1154,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 6,
+      "total_size_bytes": 888610,
+      "total_size_mb": 0.8474445343017578,
+      "sequence": 2360,
+      "event_type_counts": {
+        "follow.add": 79,
+        "post": 207,
+        "reaction": 652,
+        "action.request": 72,
+        "action.commit": 72,
+        "action.result": 72
+      },
+      "timestamp": "2026-04-24T09:47:03.471660",
+      "elapsed_seconds": 19800.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 351,
+      "total_follows": 79,
+      "total_feeds": 6,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 503,
+      "event_count": 1184,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 6,
+      "total_size_bytes": 899256,
+      "total_size_mb": 0.8575973510742188,
+      "sequence": 2390,
+      "event_type_counts": {
+        "follow.add": 81,
+        "post": 210,
+        "reaction": 671,
+        "action.request": 74,
+        "action.commit": 74,
+        "action.result": 74
+      },
+      "timestamp": "2026-04-24T09:57:03.471660",
+      "elapsed_seconds": 20400.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 358,
+      "total_follows": 81,
+      "total_feeds": 6,
+      "total_channels": 0,
+      "total_memberships": 0
+    },
+    {
+      "identity_count": 600,
+      "actor_count": 505,
+      "event_count": 1223,
+      "state_count": 600,
+      "channel_count": 0,
+      "feed_definition_count": 6,
+      "total_size_bytes": 912962,
+      "total_size_mb": 0.8706684112548828,
+      "sequence": 2429,
+      "event_type_counts": {
+        "follow.add": 84,
+        "post": 220,
+        "reaction": 688,
+        "action.request": 77,
+        "action.commit": 77,
+        "action.result": 77
+      },
+      "timestamp": "2026-04-24T10:07:03.471660",
+      "elapsed_seconds": 21000.0,
+      "total_actors": 600,
+      "by_type": {
+        "user": 400,
+        "agent": 80,
+        "curator": 60,
+        "channel_owner": 60
+      },
+      "total_events": 374,
+      "total_follows": 84,
+      "total_feeds": 6,
+      "total_channels": 0,
+      "total_memberships": 0
+    }
+  ],
+  "feed_reductions": [
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T04:37:03.471660",
+      "event_count": 0,
+      "computation_time_ms": 0.03790855407714844,
+      "result_hash": "4f53cda18c2baa0c",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T04:57:03.471660",
+      "event_count": 0,
+      "computation_time_ms": 0.0476837158203125,
+      "result_hash": "4f53cda18c2baa0c",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T05:17:03.471660",
+      "event_count": 1,
+      "computation_time_ms": 0.03933906555175781,
+      "result_hash": "9b0fbf908b32341a",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T05:37:03.471660",
+      "event_count": 1,
+      "computation_time_ms": 0.04220008850097656,
+      "result_hash": "9b0fbf908b32341a",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T05:57:03.471660",
+      "event_count": 2,
+      "computation_time_ms": 0.03647804260253906,
+      "result_hash": "c6cbcfd882818821",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T06:17:03.471660",
+      "event_count": 2,
+      "computation_time_ms": 0.03647804260253906,
+      "result_hash": "c6cbcfd882818821",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:f74ca7274fe24b5db2ae0dbc",
+      "timestamp": "2026-04-24T06:37:03.471660",
+      "event_count": 2,
+      "computation_time_ms": 0.033855438232421875,
+      "result_hash": "0c81efa0f5f46886",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:f74ca7274fe24b5db2ae0dbc",
+      "timestamp": "2026-04-24T06:57:03.471660",
+      "event_count": 2,
+      "computation_time_ms": 0.03910064697265625,
+      "result_hash": "0c81efa0f5f46886",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:f74ca7274fe24b5db2ae0dbc",
+      "timestamp": "2026-04-24T07:17:03.471660",
+      "event_count": 2,
+      "computation_time_ms": 0.05626678466796875,
+      "result_hash": "0c81efa0f5f46886",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:3cf439ff52b04793a7b2277e",
+      "timestamp": "2026-04-24T07:37:03.471660",
+      "event_count": 1,
+      "computation_time_ms": 0.03886222839355469,
+      "result_hash": "a5c8b58f4997b63f",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:361832d0baae4998ab3bcde6",
+      "timestamp": "2026-04-24T07:57:03.471660",
+      "event_count": 6,
+      "computation_time_ms": 0.06127357482910156,
+      "result_hash": "1863b07d647981d3",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:361832d0baae4998ab3bcde6",
+      "timestamp": "2026-04-24T08:17:03.471660",
+      "event_count": 6,
+      "computation_time_ms": 0.05316734313964844,
+      "result_hash": "1863b07d647981d3",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T08:37:03.471660",
+      "event_count": 10,
+      "computation_time_ms": 0.0438690185546875,
+      "result_hash": "5ea5f8fd5681ef9c",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:361832d0baae4998ab3bcde6",
+      "timestamp": "2026-04-24T08:57:03.471660",
+      "event_count": 8,
+      "computation_time_ms": 0.04744529724121094,
+      "result_hash": "67ef865154ae1068",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:f74ca7274fe24b5db2ae0dbc",
+      "timestamp": "2026-04-24T09:17:03.471660",
+      "event_count": 4,
+      "computation_time_ms": 0.03266334533691406,
+      "result_hash": "8b587967cb7722ae",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:361832d0baae4998ab3bcde6",
+      "timestamp": "2026-04-24T09:37:03.471660",
+      "event_count": 9,
+      "computation_time_ms": 0.03719329833984375,
+      "result_hash": "4bf5c0f2a5dd5482",
+      "verified": true
+    },
+    {
+      "feed_id": "relay:obj:7ef6950f29aa4f928217d34b",
+      "timestamp": "2026-04-24T09:57:03.471660",
+      "event_count": 15,
+      "computation_time_ms": 0.046253204345703125,
+      "result_hash": "2feeae0cba927985",
+      "verified": true
+    }
+  ],
+  "action_verifications": [
+    {
+      "result_event_id": "relay:event:10efcc2cb4aa4348bf36226d",
+      "timestamp": "2026-04-24T04:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.analyze.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:ddb7b1faca3845eaa5419bb1",
+      "timestamp": "2026-04-24T05:17:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.analyze.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:1f7be94448f948408f1991bc",
+      "timestamp": "2026-04-24T05:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.summarize.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:3f3147f10b9b43f9bcec50fd",
+      "timestamp": "2026-04-24T06:17:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.translate.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:5fcefc70a04143fda06065ee",
+      "timestamp": "2026-04-24T06:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.analyze.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:a021d513dc3e4f219486352b",
+      "timestamp": "2026-04-24T07:17:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.translate.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:6fc6c38ea91a4ccb8139be0a",
+      "timestamp": "2026-04-24T07:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.analyze.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:cd1abae359ec4fbd8d5b4264",
+      "timestamp": "2026-04-24T08:17:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.translate.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:9e03963833544a9e8a691a02",
+      "timestamp": "2026-04-24T08:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.translate.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:2ef32abfeb0a413b99769d43",
+      "timestamp": "2026-04-24T09:17:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.summarize.v1",
+      "error": null
+    },
+    {
+      "result_event_id": "relay:event:8a20b87b2ea34d3a885103bd",
+      "timestamp": "2026-04-24T09:47:03.471660",
+      "valid": true,
+      "action_id": "relay.basic.translate.v1",
+      "error": null
+    }
+  ]
+}
