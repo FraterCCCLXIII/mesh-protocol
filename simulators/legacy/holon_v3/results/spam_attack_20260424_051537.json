@@ -1,0 +1,1230 @@
+{
+  "scenario": "Spam Attack",
+  "duration": "1:00:00",
+  "final_metrics": {
+    "entity_count": 762,
+    "content_count": 643,
+    "link_count": 263,
+    "view_count": 5,
+    "total_objects": 1668,
+    "total_size_bytes": 426838,
+    "total_size_mb": 0.40706443786621094,
+    "sequence": 1673,
+    "link_breakdown": {
+      "follow": 43,
+      "react": 217,
+      "membership": 3
+    }
+  },
+  "view_stats": {
+    "total_executions": 40,
+    "avg_time_ms": 0.010460615158081055,
+    "p50_time_ms": 0.0059604644775390625,
+    "p95_time_ms": 0.034332275390625,
+    "p99_time_ms": 0.034332275390625
+  },
+  "metrics_history": [
+    {
+      "entity_count": 762,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 5,
+      "total_objects": 762,
+      "total_size_bytes": 171960,
+      "total_size_mb": 0.16399383544921875,
+      "sequence": 767,
+      "link_breakdown": {},
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "elapsed_seconds": 0.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 5,
+      "link_count": 9,
+      "view_count": 5,
+      "total_objects": 776,
+      "total_size_bytes": 175736,
+      "total_size_mb": 0.16759490966796875,
+      "sequence": 781,
+      "link_breakdown": {
+        "follow": 1,
+        "react": 8
+      },
+      "timestamp": "2026-04-24T05:17:17.053832",
+      "elapsed_seconds": 100.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 5,
+      "total_follows": 1,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 9,
+      "link_count": 19,
+      "view_count": 5,
+      "total_objects": 790,
+      "total_size_bytes": 179346,
+      "total_size_mb": 0.1710376739501953,
+      "sequence": 795,
+      "link_breakdown": {
+        "follow": 3,
+        "react": 16
+      },
+      "timestamp": "2026-04-24T05:18:57.053832",
+      "elapsed_seconds": 200.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 9,
+      "total_follows": 3,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 11,
+      "link_count": 31,
+      "view_count": 5,
+      "total_objects": 804,
+      "total_size_bytes": 182825,
+      "total_size_mb": 0.17435550689697266,
+      "sequence": 809,
+      "link_breakdown": {
+        "follow": 6,
+        "react": 25
+      },
+      "timestamp": "2026-04-24T05:20:37.053832",
+      "elapsed_seconds": 300.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 11,
+      "total_follows": 6,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 12,
+      "link_count": 44,
+      "view_count": 5,
+      "total_objects": 818,
+      "total_size_bytes": 186219,
+      "total_size_mb": 0.17759227752685547,
+      "sequence": 823,
+      "link_breakdown": {
+        "follow": 8,
+        "react": 36
+      },
+      "timestamp": "2026-04-24T05:22:17.053832",
+      "elapsed_seconds": 400.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 12,
+      "total_follows": 8,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 20,
+      "link_count": 50,
+      "view_count": 5,
+      "total_objects": 832,
+      "total_size_bytes": 190256,
+      "total_size_mb": 0.1814422607421875,
+      "sequence": 837,
+      "link_breakdown": {
+        "follow": 11,
+        "react": 39
+      },
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "elapsed_seconds": 500.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 20,
+      "total_follows": 11,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 25,
+      "link_count": 55,
+      "view_count": 5,
+      "total_objects": 842,
+      "total_size_bytes": 193110,
+      "total_size_mb": 0.18416404724121094,
+      "sequence": 847,
+      "link_breakdown": {
+        "follow": 11,
+        "react": 44
+      },
+      "timestamp": "2026-04-24T05:25:37.053832",
+      "elapsed_seconds": 600.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 25,
+      "total_follows": 11,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 31,
+      "link_count": 62,
+      "view_count": 5,
+      "total_objects": 855,
+      "total_size_bytes": 196722,
+      "total_size_mb": 0.1876087188720703,
+      "sequence": 860,
+      "link_breakdown": {
+        "follow": 13,
+        "react": 49
+      },
+      "timestamp": "2026-04-24T05:27:17.053832",
+      "elapsed_seconds": 700.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 31,
+      "total_follows": 13,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 36,
+      "link_count": 66,
+      "view_count": 5,
+      "total_objects": 864,
+      "total_size_bytes": 199361,
+      "total_size_mb": 0.1901254653930664,
+      "sequence": 869,
+      "link_breakdown": {
+        "follow": 14,
+        "react": 52
+      },
+      "timestamp": "2026-04-24T05:28:57.053832",
+      "elapsed_seconds": 800.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 36,
+      "total_follows": 14,
+      "total_group_memberships": 0
+    },
+    {
+      "entity_count": 762,
+      "content_count": 37,
+      "link_count": 73,
+      "view_count": 5,
+      "total_objects": 872,
+      "total_size_bytes": 201300,
+      "total_size_mb": 0.19197463989257812,
+      "sequence": 877,
+      "link_breakdown": {
+        "follow": 14,
+        "react": 57,
+        "membership": 2
+      },
+      "timestamp": "2026-04-24T05:30:37.053832",
+      "elapsed_seconds": 900.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 37,
+      "total_follows": 14,
+      "total_group_memberships": 2
+    },
+    {
+      "entity_count": 762,
+      "content_count": 39,
+      "link_count": 78,
+      "view_count": 5,
+      "total_objects": 879,
+      "total_size_bytes": 203086,
+      "total_size_mb": 0.1936779022216797,
+      "sequence": 884,
+      "link_breakdown": {
+        "follow": 14,
+        "react": 62,
+        "membership": 2
+      },
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "elapsed_seconds": 1000.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 39,
+      "total_follows": 14,
+      "total_group_memberships": 2
+    },
+    {
+      "entity_count": 762,
+      "content_count": 41,
+      "link_count": 89,
+      "view_count": 5,
+      "total_objects": 892,
+      "total_size_bytes": 206369,
+      "total_size_mb": 0.1968088150024414,
+      "sequence": 897,
+      "link_breakdown": {
+        "follow": 15,
+        "react": 72,
+        "membership": 2
+      },
+      "timestamp": "2026-04-24T05:33:57.053832",
+      "elapsed_seconds": 1100.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 41,
+      "total_follows": 15,
+      "total_group_memberships": 2
+    },
+    {
+      "entity_count": 762,
+      "content_count": 544,
+      "link_count": 95,
+      "view_count": 5,
+      "total_objects": 1401,
+      "total_size_bytes": 355211,
+      "total_size_mb": 0.33875560760498047,
+      "sequence": 1406,
+      "link_breakdown": {
+        "follow": 16,
+        "react": 77,
+        "membership": 2
+      },
+      "timestamp": "2026-04-24T05:35:37.053832",
+      "elapsed_seconds": 1200.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 544,
+      "total_follows": 16,
+      "total_group_memberships": 2
+    },
+    {
+      "entity_count": 762,
+      "content_count": 549,
+      "link_count": 102,
+      "view_count": 5,
+      "total_objects": 1413,
+      "total_size_bytes": 358449,
+      "total_size_mb": 0.3418436050415039,
+      "sequence": 1418,
+      "link_breakdown": {
+        "follow": 18,
+        "react": 82,
+        "membership": 2
+      },
+      "timestamp": "2026-04-24T05:37:17.053832",
+      "elapsed_seconds": 1300.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 549,
+      "total_follows": 18,
+      "total_group_memberships": 2
+    },
+    {
+      "entity_count": 762,
+      "content_count": 552,
+      "link_count": 109,
+      "view_count": 5,
+      "total_objects": 1423,
+      "total_size_bytes": 361123,
+      "total_size_mb": 0.3443937301635742,
+      "sequence": 1428,
+      "link_breakdown": {
+        "follow": 18,
+        "react": 88,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:38:57.053832",
+      "elapsed_seconds": 1400.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 552,
+      "total_follows": 18,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 556,
+      "link_count": 113,
+      "view_count": 5,
+      "total_objects": 1431,
+      "total_size_bytes": 363383,
+      "total_size_mb": 0.34654903411865234,
+      "sequence": 1436,
+      "link_breakdown": {
+        "follow": 18,
+        "react": 92,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "elapsed_seconds": 1500.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 556,
+      "total_follows": 18,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 561,
+      "link_count": 119,
+      "view_count": 5,
+      "total_objects": 1442,
+      "total_size_bytes": 366416,
+      "total_size_mb": 0.3494415283203125,
+      "sequence": 1447,
+      "link_breakdown": {
+        "follow": 19,
+        "react": 97,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:42:17.053832",
+      "elapsed_seconds": 1600.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 561,
+      "total_follows": 19,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 568,
+      "link_count": 127,
+      "view_count": 5,
+      "total_objects": 1457,
+      "total_size_bytes": 370520,
+      "total_size_mb": 0.35335540771484375,
+      "sequence": 1462,
+      "link_breakdown": {
+        "follow": 22,
+        "react": 102,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:43:57.053832",
+      "elapsed_seconds": 1700.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 568,
+      "total_follows": 22,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 571,
+      "link_count": 139,
+      "view_count": 5,
+      "total_objects": 1472,
+      "total_size_bytes": 374254,
+      "total_size_mb": 0.3569164276123047,
+      "sequence": 1477,
+      "link_breakdown": {
+        "follow": 26,
+        "react": 110,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:45:37.053832",
+      "elapsed_seconds": 1800.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 571,
+      "total_follows": 26,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 575,
+      "link_count": 149,
+      "view_count": 5,
+      "total_objects": 1486,
+      "total_size_bytes": 377849,
+      "total_size_mb": 0.36034488677978516,
+      "sequence": 1491,
+      "link_breakdown": {
+        "follow": 29,
+        "react": 117,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:47:17.053832",
+      "elapsed_seconds": 1900.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 575,
+      "total_follows": 29,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 580,
+      "link_count": 153,
+      "view_count": 5,
+      "total_objects": 1495,
+      "total_size_bytes": 380410,
+      "total_size_mb": 0.36278724670410156,
+      "sequence": 1500,
+      "link_breakdown": {
+        "follow": 30,
+        "react": 120,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "elapsed_seconds": 2000.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 580,
+      "total_follows": 30,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 581,
+      "link_count": 164,
+      "view_count": 5,
+      "total_objects": 1507,
+      "total_size_bytes": 383337,
+      "total_size_mb": 0.36557865142822266,
+      "sequence": 1512,
+      "link_breakdown": {
+        "follow": 31,
+        "react": 130,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:50:37.053832",
+      "elapsed_seconds": 2100.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 581,
+      "total_follows": 31,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 586,
+      "link_count": 169,
+      "view_count": 5,
+      "total_objects": 1517,
+      "total_size_bytes": 386086,
+      "total_size_mb": 0.36820030212402344,
+      "sequence": 1522,
+      "link_breakdown": {
+        "follow": 32,
+        "react": 134,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:52:17.053832",
+      "elapsed_seconds": 2200.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 586,
+      "total_follows": 32,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 592,
+      "link_count": 180,
+      "view_count": 5,
+      "total_objects": 1534,
+      "total_size_bytes": 390707,
+      "total_size_mb": 0.3726072311401367,
+      "sequence": 1539,
+      "link_breakdown": {
+        "follow": 32,
+        "react": 145,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:53:57.053832",
+      "elapsed_seconds": 2300.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 592,
+      "total_follows": 32,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 595,
+      "link_count": 187,
+      "view_count": 5,
+      "total_objects": 1544,
+      "total_size_bytes": 393271,
+      "total_size_mb": 0.37505245208740234,
+      "sequence": 1549,
+      "link_breakdown": {
+        "follow": 33,
+        "react": 151,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:55:37.053832",
+      "elapsed_seconds": 2400.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 595,
+      "total_follows": 33,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 598,
+      "link_count": 195,
+      "view_count": 5,
+      "total_objects": 1555,
+      "total_size_bytes": 396042,
+      "total_size_mb": 0.37769508361816406,
+      "sequence": 1560,
+      "link_breakdown": {
+        "follow": 34,
+        "react": 158,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "elapsed_seconds": 2500.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 598,
+      "total_follows": 34,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 603,
+      "link_count": 201,
+      "view_count": 5,
+      "total_objects": 1566,
+      "total_size_bytes": 399077,
+      "total_size_mb": 0.38058948516845703,
+      "sequence": 1571,
+      "link_breakdown": {
+        "follow": 36,
+        "react": 162,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T05:58:57.053832",
+      "elapsed_seconds": 2600.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 603,
+      "total_follows": 36,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 605,
+      "link_count": 205,
+      "view_count": 5,
+      "total_objects": 1572,
+      "total_size_bytes": 400690,
+      "total_size_mb": 0.3821277618408203,
+      "sequence": 1577,
+      "link_breakdown": {
+        "follow": 37,
+        "react": 165,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:00:37.053832",
+      "elapsed_seconds": 2700.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 605,
+      "total_follows": 37,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 608,
+      "link_count": 213,
+      "view_count": 5,
+      "total_objects": 1583,
+      "total_size_bytes": 403517,
+      "total_size_mb": 0.3848237991333008,
+      "sequence": 1588,
+      "link_breakdown": {
+        "follow": 40,
+        "react": 170,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:02:17.053832",
+      "elapsed_seconds": 2800.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 608,
+      "total_follows": 40,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 612,
+      "link_count": 217,
+      "view_count": 5,
+      "total_objects": 1591,
+      "total_size_bytes": 405741,
+      "total_size_mb": 0.3869447708129883,
+      "sequence": 1596,
+      "link_breakdown": {
+        "follow": 40,
+        "react": 174,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:03:57.053832",
+      "elapsed_seconds": 2900.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 612,
+      "total_follows": 40,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 618,
+      "link_count": 229,
+      "view_count": 5,
+      "total_objects": 1609,
+      "total_size_bytes": 410520,
+      "total_size_mb": 0.39150238037109375,
+      "sequence": 1614,
+      "link_breakdown": {
+        "follow": 42,
+        "react": 184,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "elapsed_seconds": 3000.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 618,
+      "total_follows": 42,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 621,
+      "link_count": 234,
+      "view_count": 5,
+      "total_objects": 1617,
+      "total_size_bytes": 412710,
+      "total_size_mb": 0.39359092712402344,
+      "sequence": 1622,
+      "link_breakdown": {
+        "follow": 42,
+        "react": 189,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:07:17.053832",
+      "elapsed_seconds": 3100.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 621,
+      "total_follows": 42,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 625,
+      "link_count": 240,
+      "view_count": 5,
+      "total_objects": 1627,
+      "total_size_bytes": 415450,
+      "total_size_mb": 0.39620399475097656,
+      "sequence": 1632,
+      "link_breakdown": {
+        "follow": 42,
+        "react": 195,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:08:57.053832",
+      "elapsed_seconds": 3200.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 625,
+      "total_follows": 42,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 631,
+      "link_count": 247,
+      "view_count": 5,
+      "total_objects": 1640,
+      "total_size_bytes": 419050,
+      "total_size_mb": 0.39963722229003906,
+      "sequence": 1645,
+      "link_breakdown": {
+        "follow": 43,
+        "react": 201,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:10:37.053832",
+      "elapsed_seconds": 3300.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 631,
+      "total_follows": 43,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 636,
+      "link_count": 254,
+      "view_count": 5,
+      "total_objects": 1652,
+      "total_size_bytes": 422428,
+      "total_size_mb": 0.4028587341308594,
+      "sequence": 1657,
+      "link_breakdown": {
+        "follow": 43,
+        "react": 208,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:12:17.053832",
+      "elapsed_seconds": 3400.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 636,
+      "total_follows": 43,
+      "total_group_memberships": 3
+    },
+    {
+      "entity_count": 762,
+      "content_count": 638,
+      "link_count": 257,
+      "view_count": 5,
+      "total_objects": 1657,
+      "total_size_bytes": 423793,
+      "total_size_mb": 0.4041604995727539,
+      "sequence": 1662,
+      "link_breakdown": {
+        "follow": 43,
+        "react": 211,
+        "membership": 3
+      },
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "elapsed_seconds": 3500.0,
+      "total_agents": 760,
+      "by_type": {
+        "casual": 500,
+        "active": 200,
+        "spammer": 50,
+        "moderator": 10
+      },
+      "total_content": 638,
+      "total_follows": 43,
+      "total_group_memberships": 3
+    }
+  ],
+  "view_executions": [
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.034332275390625
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0095367431640625
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0059604644775390625
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:15:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.026226043701171875
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.007152557373046875
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0057220458984375
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:23:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.02288818359375
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.011920928955078125
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.00476837158203125
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:32:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.03314018249511719
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.008344650268554688
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.006198883056640625
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0064373016357421875
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:40:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.006198883056640625
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.029325485229492188
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0064373016357421875
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:48:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0040531158447265625
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.030040740966796875
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.00762939453125
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0050067901611328125
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T05:57:17.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.034332275390625
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.00667572021484375
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T06:05:37.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0045299530029296875
+    },
+    {
+      "view_id": "view:test-view-1",
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.029802322387695312
+    },
+    {
+      "view_id": "view:test-view-2",
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.0064373016357421875
+    },
+    {
+      "view_id": "view:test-view-3",
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.00476837158203125
+    },
+    {
+      "view_id": "view:test-view-4",
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    },
+    {
+      "view_id": "view:test-view-5",
+      "timestamp": "2026-04-24T06:13:57.053832",
+      "result_count": 0,
+      "computation_time_ms": 0.004291534423828125
+    }
+  ]
+}

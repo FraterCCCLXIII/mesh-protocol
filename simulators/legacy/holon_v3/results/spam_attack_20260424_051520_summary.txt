@@ -1,0 +1,24 @@
+
+============================================================
+SIMULATION RESULTS: Spam Attack
+============================================================
+
+Storage:
+  Entities:     762
+  Content:      626
+  Links:        264
+  Total:        1,652
+  Size:         0.40 MB
+
+Link breakdown:
+  react: 224
+  follow: 37
+  membership: 3
+
+View execution:
+  Total executions: 40
+  Avg time:         0.01 ms
+  P50 time:         0.01 ms
+  P95 time:         0.03 ms
+
+============================================================
