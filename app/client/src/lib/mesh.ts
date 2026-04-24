@@ -3,7 +3,8 @@
  * Handles key management, authentication, and API calls
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:12000';
+// Use relative URLs when proxied, or explicit URL for external access
+const API_BASE = import.meta.env?.VITE_API_URL || '';
 
 // Simple Ed25519 implementation using Web Crypto
 // Note: In production, use a proper Ed25519 library like @noble/ed25519
@@ -384,3 +385,8 @@ export async function getNodeInfo(): Promise<{
 export async function getStats(): Promise<Record<string, number>> {
   return apiCall('/api/stats');
 }
+
+// Aliases for backwards compatibility
+export const registerUser = register;
+export const loginUser = login;
+

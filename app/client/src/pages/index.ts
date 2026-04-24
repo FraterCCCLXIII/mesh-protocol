@@ -1,0 +1,9 @@
+export { HomePage } from './Home';
+export { ProfilePage } from './Profile';
+export { GroupsPage } from './Groups';
+export { PostDetailPage } from './PostDetail';
+export { PublicationsPage } from './Publications';
+export { NewPublicationPage } from './NewPublication';
+export { PublicationDetailPage } from './PublicationDetail';
+export { WritePage } from './Write';
+export { ArticlePage } from './Article';
