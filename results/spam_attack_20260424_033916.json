@@ -1,0 +1,1737 @@
+{
+  "scenario": "Spam Attack",
+  "duration": "1:00:00",
+  "final_metrics": {
+    "entity_count": 522,
+    "content_count": 617,
+    "link_count": 183,
+    "view_count": 6,
+    "total_objects": 1322,
+    "total_size_bytes": 356630,
+    "total_size_mb": 0.34010887145996094,
+    "sequence": 1328,
+    "link_breakdown": {
+      "member": 3,
+      "react": 153,
+      "follow": 25,
+      "subscribe": 2
+    },
+    "handle_count": 522
+  },
+  "view_stats": {
+    "total_executions": 90,
+    "avg_time_ms": 8.923223283555773,
+    "p50_time_ms": 0.331878662109375,
+    "p95_time_ms": 36.80109977722168
+  },
+  "discovery_stats": {
+    "total_queries": 12,
+    "avg_time_ms": 0.9057919184366862
+  },
+  "economics_stats": {
+    "total_tips": 0,
+    "total_tip_amount": 0,
+    "creator_subscriptions": 0,
+    "view_subscriptions": 2
+  },
+  "metrics_history": [
+    {
+      "entity_count": 522,
+      "content_count": 0,
+      "link_count": 0,
+      "view_count": 6,
+      "total_objects": 522,
+      "total_size_bytes": 124481,
+      "total_size_mb": 0.1187143325805664,
+      "sequence": 528,
+      "link_breakdown": {},
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:39:15.426447",
+      "elapsed_seconds": 0.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 0,
+      "total_follows": 0,
+      "total_group_memberships": 0,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 2,
+      "link_count": 2,
+      "view_count": 6,
+      "total_objects": 526,
+      "total_size_bytes": 125579,
+      "total_size_mb": 0.11976146697998047,
+      "sequence": 532,
+      "link_breakdown": {
+        "member": 1,
+        "react": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:40:55.426447",
+      "elapsed_seconds": 100.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 2,
+      "total_follows": 0,
+      "total_group_memberships": 1,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 5,
+      "link_count": 13,
+      "view_count": 6,
+      "total_objects": 540,
+      "total_size_bytes": 128961,
+      "total_size_mb": 0.1229867935180664,
+      "sequence": 546,
+      "link_breakdown": {
+        "member": 1,
+        "react": 11,
+        "follow": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:42:35.426447",
+      "elapsed_seconds": 200.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 5,
+      "total_follows": 1,
+      "total_group_memberships": 1,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 7,
+      "link_count": 13,
+      "view_count": 6,
+      "total_objects": 542,
+      "total_size_bytes": 129589,
+      "total_size_mb": 0.12358570098876953,
+      "sequence": 548,
+      "link_breakdown": {
+        "member": 1,
+        "react": 11,
+        "follow": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:44:15.426447",
+      "elapsed_seconds": 300.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 7,
+      "total_follows": 1,
+      "total_group_memberships": 1,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 8,
+      "link_count": 17,
+      "view_count": 6,
+      "total_objects": 547,
+      "total_size_bytes": 130772,
+      "total_size_mb": 0.12471389770507812,
+      "sequence": 553,
+      "link_breakdown": {
+        "member": 1,
+        "react": 14,
+        "follow": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:45:55.426447",
+      "elapsed_seconds": 400.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 8,
+      "total_follows": 2,
+      "total_group_memberships": 1,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 9,
+      "link_count": 22,
+      "view_count": 6,
+      "total_objects": 553,
+      "total_size_bytes": 132177,
+      "total_size_mb": 0.1260538101196289,
+      "sequence": 559,
+      "link_breakdown": {
+        "member": 2,
+        "react": 18,
+        "follow": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:47:35.426447",
+      "elapsed_seconds": 500.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 9,
+      "total_follows": 2,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 15,
+      "link_count": 32,
+      "view_count": 6,
+      "total_objects": 569,
+      "total_size_bytes": 136355,
+      "total_size_mb": 0.13003826141357422,
+      "sequence": 575,
+      "link_breakdown": {
+        "member": 2,
+        "react": 27,
+        "follow": 3
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:49:15.426447",
+      "elapsed_seconds": 600.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 15,
+      "total_follows": 3,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 21,
+      "link_count": 38,
+      "view_count": 6,
+      "total_objects": 581,
+      "total_size_bytes": 139881,
+      "total_size_mb": 0.13340091705322266,
+      "sequence": 587,
+      "link_breakdown": {
+        "member": 2,
+        "react": 32,
+        "follow": 4
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:50:55.426447",
+      "elapsed_seconds": 700.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 21,
+      "total_follows": 4,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 24,
+      "link_count": 41,
+      "view_count": 6,
+      "total_objects": 587,
+      "total_size_bytes": 141518,
+      "total_size_mb": 0.1349620819091797,
+      "sequence": 593,
+      "link_breakdown": {
+        "member": 2,
+        "react": 34,
+        "follow": 5
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:52:35.426447",
+      "elapsed_seconds": 800.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 24,
+      "total_follows": 5,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 527,
+      "link_count": 48,
+      "view_count": 6,
+      "total_objects": 1097,
+      "total_size_bytes": 297459,
+      "total_size_mb": 0.2836790084838867,
+      "sequence": 1103,
+      "link_breakdown": {
+        "member": 2,
+        "react": 40,
+        "follow": 6
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:54:15.426447",
+      "elapsed_seconds": 900.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 527,
+      "total_follows": 6,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 529,
+      "link_count": 58,
+      "view_count": 6,
+      "total_objects": 1109,
+      "total_size_bytes": 300301,
+      "total_size_mb": 0.2863893508911133,
+      "sequence": 1115,
+      "link_breakdown": {
+        "member": 2,
+        "react": 50,
+        "follow": 6
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:55:55.426447",
+      "elapsed_seconds": 1000.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 529,
+      "total_follows": 6,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 531,
+      "link_count": 62,
+      "view_count": 6,
+      "total_objects": 1115,
+      "total_size_bytes": 301762,
+      "total_size_mb": 0.2877826690673828,
+      "sequence": 1121,
+      "link_breakdown": {
+        "member": 2,
+        "react": 52,
+        "follow": 8
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:57:35.426447",
+      "elapsed_seconds": 1100.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 531,
+      "total_follows": 8,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 539,
+      "link_count": 67,
+      "view_count": 6,
+      "total_objects": 1128,
+      "total_size_bytes": 305604,
+      "total_size_mb": 0.2914466857910156,
+      "sequence": 1134,
+      "link_breakdown": {
+        "member": 2,
+        "react": 55,
+        "follow": 10
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T03:59:15.426447",
+      "elapsed_seconds": 1200.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 539,
+      "total_follows": 10,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 540,
+      "link_count": 69,
+      "view_count": 6,
+      "total_objects": 1131,
+      "total_size_bytes": 306298,
+      "total_size_mb": 0.29210853576660156,
+      "sequence": 1137,
+      "link_breakdown": {
+        "member": 2,
+        "react": 57,
+        "follow": 10
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:00:55.426447",
+      "elapsed_seconds": 1300.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 540,
+      "total_follows": 10,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 546,
+      "link_count": 72,
+      "view_count": 6,
+      "total_objects": 1140,
+      "total_size_bytes": 309111,
+      "total_size_mb": 0.29479122161865234,
+      "sequence": 1146,
+      "link_breakdown": {
+        "member": 2,
+        "react": 59,
+        "follow": 11
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:02:35.426447",
+      "elapsed_seconds": 1400.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 546,
+      "total_follows": 11,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 551,
+      "link_count": 78,
+      "view_count": 6,
+      "total_objects": 1151,
+      "total_size_bytes": 312136,
+      "total_size_mb": 0.29767608642578125,
+      "sequence": 1157,
+      "link_breakdown": {
+        "member": 2,
+        "react": 65,
+        "follow": 11
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:04:15.426447",
+      "elapsed_seconds": 1500.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 551,
+      "total_follows": 11,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 552,
+      "link_count": 80,
+      "view_count": 6,
+      "total_objects": 1154,
+      "total_size_bytes": 312893,
+      "total_size_mb": 0.2983980178833008,
+      "sequence": 1160,
+      "link_breakdown": {
+        "member": 2,
+        "react": 66,
+        "follow": 12
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "elapsed_seconds": 1600.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 552,
+      "total_follows": 12,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 556,
+      "link_count": 89,
+      "view_count": 6,
+      "total_objects": 1167,
+      "total_size_bytes": 316172,
+      "total_size_mb": 0.3015251159667969,
+      "sequence": 1173,
+      "link_breakdown": {
+        "member": 2,
+        "react": 75,
+        "follow": 12
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:07:35.426447",
+      "elapsed_seconds": 1700.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 556,
+      "total_follows": 12,
+      "total_group_memberships": 2,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 559,
+      "link_count": 95,
+      "view_count": 6,
+      "total_objects": 1176,
+      "total_size_bytes": 318464,
+      "total_size_mb": 0.3037109375,
+      "sequence": 1182,
+      "link_breakdown": {
+        "member": 3,
+        "react": 79,
+        "follow": 13
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "elapsed_seconds": 1800.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 559,
+      "total_follows": 13,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 562,
+      "link_count": 99,
+      "view_count": 6,
+      "total_objects": 1183,
+      "total_size_bytes": 320338,
+      "total_size_mb": 0.3054981231689453,
+      "sequence": 1189,
+      "link_breakdown": {
+        "member": 3,
+        "react": 81,
+        "follow": 15
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:10:55.426447",
+      "elapsed_seconds": 1900.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 562,
+      "total_follows": 15,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 565,
+      "link_count": 104,
+      "view_count": 6,
+      "total_objects": 1191,
+      "total_size_bytes": 322383,
+      "total_size_mb": 0.3074483871459961,
+      "sequence": 1197,
+      "link_breakdown": {
+        "member": 3,
+        "react": 86,
+        "follow": 15
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "elapsed_seconds": 2000.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 565,
+      "total_follows": 15,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 568,
+      "link_count": 109,
+      "view_count": 6,
+      "total_objects": 1199,
+      "total_size_bytes": 324495,
+      "total_size_mb": 0.3094625473022461,
+      "sequence": 1205,
+      "link_breakdown": {
+        "member": 3,
+        "react": 90,
+        "follow": 16
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:14:15.426447",
+      "elapsed_seconds": 2100.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 568,
+      "total_follows": 16,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 573,
+      "link_count": 113,
+      "view_count": 6,
+      "total_objects": 1208,
+      "total_size_bytes": 327096,
+      "total_size_mb": 0.31194305419921875,
+      "sequence": 1214,
+      "link_breakdown": {
+        "member": 3,
+        "react": 94,
+        "follow": 16
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "elapsed_seconds": 2200.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 573,
+      "total_follows": 16,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 0,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 575,
+      "link_count": 117,
+      "view_count": 6,
+      "total_objects": 1214,
+      "total_size_bytes": 328619,
+      "total_size_mb": 0.31339550018310547,
+      "sequence": 1220,
+      "link_breakdown": {
+        "member": 3,
+        "react": 97,
+        "follow": 16,
+        "subscribe": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:17:35.426447",
+      "elapsed_seconds": 2300.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 575,
+      "total_follows": 16,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 1,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 579,
+      "link_count": 119,
+      "view_count": 6,
+      "total_objects": 1220,
+      "total_size_bytes": 330371,
+      "total_size_mb": 0.3150663375854492,
+      "sequence": 1226,
+      "link_breakdown": {
+        "member": 3,
+        "react": 99,
+        "follow": 16,
+        "subscribe": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "elapsed_seconds": 2400.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 579,
+      "total_follows": 16,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 1,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 586,
+      "link_count": 127,
+      "view_count": 6,
+      "total_objects": 1235,
+      "total_size_bytes": 334222,
+      "total_size_mb": 0.3187389373779297,
+      "sequence": 1241,
+      "link_breakdown": {
+        "member": 3,
+        "react": 107,
+        "follow": 16,
+        "subscribe": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:20:55.426447",
+      "elapsed_seconds": 2500.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 586,
+      "total_follows": 16,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 1,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 587,
+      "link_count": 131,
+      "view_count": 6,
+      "total_objects": 1240,
+      "total_size_bytes": 335408,
+      "total_size_mb": 0.3198699951171875,
+      "sequence": 1246,
+      "link_breakdown": {
+        "member": 3,
+        "react": 110,
+        "follow": 17,
+        "subscribe": 1
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "elapsed_seconds": 2600.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 587,
+      "total_follows": 17,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 1,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 591,
+      "link_count": 137,
+      "view_count": 6,
+      "total_objects": 1250,
+      "total_size_bytes": 338017,
+      "total_size_mb": 0.3223581314086914,
+      "sequence": 1256,
+      "link_breakdown": {
+        "member": 3,
+        "react": 114,
+        "follow": 18,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:24:15.426447",
+      "elapsed_seconds": 2700.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 591,
+      "total_follows": 18,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 592,
+      "link_count": 141,
+      "view_count": 6,
+      "total_objects": 1255,
+      "total_size_bytes": 339169,
+      "total_size_mb": 0.3234567642211914,
+      "sequence": 1261,
+      "link_breakdown": {
+        "member": 3,
+        "react": 117,
+        "follow": 19,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "elapsed_seconds": 2800.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 592,
+      "total_follows": 19,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 594,
+      "link_count": 148,
+      "view_count": 6,
+      "total_objects": 1264,
+      "total_size_bytes": 341352,
+      "total_size_mb": 0.32553863525390625,
+      "sequence": 1270,
+      "link_breakdown": {
+        "member": 3,
+        "react": 123,
+        "follow": 20,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:27:35.426447",
+      "elapsed_seconds": 2900.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 594,
+      "total_follows": 20,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 598,
+      "link_count": 152,
+      "view_count": 6,
+      "total_objects": 1272,
+      "total_size_bytes": 343605,
+      "total_size_mb": 0.32768726348876953,
+      "sequence": 1278,
+      "link_breakdown": {
+        "member": 3,
+        "react": 126,
+        "follow": 21,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "elapsed_seconds": 3000.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 598,
+      "total_follows": 21,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 603,
+      "link_count": 160,
+      "view_count": 6,
+      "total_objects": 1285,
+      "total_size_bytes": 346984,
+      "total_size_mb": 0.33090972900390625,
+      "sequence": 1291,
+      "link_breakdown": {
+        "member": 3,
+        "react": 134,
+        "follow": 21,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:30:55.426447",
+      "elapsed_seconds": 3100.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 603,
+      "total_follows": 21,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 604,
+      "link_count": 165,
+      "view_count": 6,
+      "total_objects": 1291,
+      "total_size_bytes": 348399,
+      "total_size_mb": 0.3322591781616211,
+      "sequence": 1297,
+      "link_breakdown": {
+        "member": 3,
+        "react": 139,
+        "follow": 21,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "elapsed_seconds": 3200.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 604,
+      "total_follows": 21,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 607,
+      "link_count": 172,
+      "view_count": 6,
+      "total_objects": 1301,
+      "total_size_bytes": 350936,
+      "total_size_mb": 0.33467864990234375,
+      "sequence": 1307,
+      "link_breakdown": {
+        "member": 3,
+        "react": 145,
+        "follow": 22,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:34:15.426447",
+      "elapsed_seconds": 3300.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 607,
+      "total_follows": 22,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 611,
+      "link_count": 175,
+      "view_count": 6,
+      "total_objects": 1308,
+      "total_size_bytes": 352844,
+      "total_size_mb": 0.3364982604980469,
+      "sequence": 1314,
+      "link_breakdown": {
+        "member": 3,
+        "react": 146,
+        "follow": 24,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "elapsed_seconds": 3400.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 611,
+      "total_follows": 24,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    },
+    {
+      "entity_count": 522,
+      "content_count": 613,
+      "link_count": 179,
+      "view_count": 6,
+      "total_objects": 1314,
+      "total_size_bytes": 354381,
+      "total_size_mb": 0.3379640579223633,
+      "sequence": 1320,
+      "link_breakdown": {
+        "member": 3,
+        "react": 150,
+        "follow": 24,
+        "subscribe": 2
+      },
+      "handle_count": 522,
+      "timestamp": "2026-04-24T04:37:35.426447",
+      "elapsed_seconds": 3500.0,
+      "total_agents": 520,
+      "by_type": {
+        "casual": 300,
+        "active": 150,
+        "spammer": 50,
+        "moderator": 20
+      },
+      "total_content": 613,
+      "total_follows": 24,
+      "total_group_memberships": 3,
+      "total_creator_subscriptions": 0,
+      "total_view_subscriptions": 2,
+      "total_verifications": 0,
+      "total_views_created": 6
+    }
+  ],
+  "view_executions": [
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 24.090290069580078,
+      "input_hash": "5c481a3e5c081d38",
+      "result_hash": "59c8555550d3511b"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.3151893615722656,
+      "input_hash": "5c481a3e5c081d38",
+      "result_hash": "2d5ccf81942d2829"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "result_count": 3,
+      "computation_time_ms": 0.3075599670410156,
+      "input_hash": "d7da78bde83c6bba",
+      "result_hash": "be7acc5c39b944ad"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 33.171653747558594,
+      "input_hash": "305a2307f380989d",
+      "result_hash": "d56bc1d6182585e6"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:05:55.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.017642974853515625,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 24.724721908569336,
+      "input_hash": "fbdc8ba6a6780445",
+      "result_hash": "fd6f059315f085bb"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.31685829162597656,
+      "input_hash": "fbdc8ba6a6780445",
+      "result_hash": "1e39bccae0745757"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "result_count": 3,
+      "computation_time_ms": 0.3228187561035156,
+      "input_hash": "d7da78bde83c6bba",
+      "result_hash": "be7acc5c39b944ad"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 33.58340263366699,
+      "input_hash": "d15ec5cba0af2013",
+      "result_hash": "e3f1ea56fff74357"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.019311904907226562,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 25.141477584838867,
+      "input_hash": "2e8b61f3b3497c1f",
+      "result_hash": "cd6049fe40d3ab5c"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.339508056640625,
+      "input_hash": "2e8b61f3b3497c1f",
+      "result_hash": "49cc76f9c1fb7835"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "result_count": 4,
+      "computation_time_ms": 0.339508056640625,
+      "input_hash": "896d6ef180c1a1b0",
+      "result_hash": "52ee44fc9432eef9"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 34.516096115112305,
+      "input_hash": "af29db0ca8b26452",
+      "result_hash": "36cf31c076def406"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:12:35.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.02193450927734375,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 25.791168212890625,
+      "input_hash": "e4b282995facaa19",
+      "result_hash": "76b2d7e182e6fa4f"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.3185272216796875,
+      "input_hash": "e4b282995facaa19",
+      "result_hash": "93e19e1824ed2493"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "result_count": 5,
+      "computation_time_ms": 0.3876686096191406,
+      "input_hash": "5beb466ca53a75e9",
+      "result_hash": "e9c558a94939c7aa"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 35.102128982543945,
+      "input_hash": "cdaf74c534125211",
+      "result_hash": "36cf31c076def406"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:15:55.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.017404556274414062,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 25.910377502441406,
+      "input_hash": "3e4adb48dd236435",
+      "result_hash": "db8ed336a9f66ce0"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.3199577331542969,
+      "input_hash": "3e4adb48dd236435",
+      "result_hash": "c92fe13120b250ee"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "result_count": 5,
+      "computation_time_ms": 0.4966259002685547,
+      "input_hash": "5beb466ca53a75e9",
+      "result_hash": "e9c558a94939c7aa"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 37.071943283081055,
+      "input_hash": "8529ca0b156a3d8c",
+      "result_hash": "2b553b537408e13e"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.019073486328125,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 26.695966720581055,
+      "input_hash": "4539d4e2ef09a9f5",
+      "result_hash": "ce2b1daedd868879"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.3345012664794922,
+      "input_hash": "4539d4e2ef09a9f5",
+      "result_hash": "a87961d92f0202ea"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "result_count": 6,
+      "computation_time_ms": 0.4487037658691406,
+      "input_hash": "f43eaee311e95fd6",
+      "result_hash": "9a93bb60ab841f5b"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 36.370277404785156,
+      "input_hash": "cc48736d881459a2",
+      "result_hash": "10cbcbcbce7c2ca8"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:22:35.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.018596649169921875,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 26.86929702758789,
+      "input_hash": "061c7b6bbf7d7e2d",
+      "result_hash": "52992a1ca654145a"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.33020973205566406,
+      "input_hash": "061c7b6bbf7d7e2d",
+      "result_hash": "8f911b2823ffa50d"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "result_count": 6,
+      "computation_time_ms": 0.4520416259765625,
+      "input_hash": "f43eaee311e95fd6",
+      "result_hash": "9a93bb60ab841f5b"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 36.80109977722168,
+      "input_hash": "46b3693cee1529a3",
+      "result_hash": "10cbcbcbce7c2ca8"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:25:55.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.019550323486328125,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 26.835918426513672,
+      "input_hash": "ffee1405eeca3392",
+      "result_hash": "5ecd826969d514e5"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.34499168395996094,
+      "input_hash": "ffee1405eeca3392",
+      "result_hash": "a8b81b2510f142da"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "result_count": 9,
+      "computation_time_ms": 0.5679130554199219,
+      "input_hash": "3429de54aae16b76",
+      "result_hash": "e7dd07327e5a83a1"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "result_count": 50,
+      "computation_time_ms": 37.142038345336914,
+      "input_hash": "693308e23016f85d",
+      "result_hash": "10cbcbcbce7c2ca8"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.019788742065429688,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 27.059078216552734,
+      "input_hash": "74ba3556694135a4",
+      "result_hash": "f776a2e518b1f4dd"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.331878662109375,
+      "input_hash": "74ba3556694135a4",
+      "result_hash": "81e79d085e799906"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "result_count": 10,
+      "computation_time_ms": 0.6587505340576172,
+      "input_hash": "81e25fb92f4310f3",
+      "result_hash": "4c6fdb9befc83aeb"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "result_count": 50,
+      "computation_time_ms": 37.622928619384766,
+      "input_hash": "b023e5c29909f625",
+      "result_hash": "10cbcbcbce7c2ca8"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:32:35.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.02002716064453125,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    },
+    {
+      "view_id": "view:system-trending",
+      "view_name": "Trending",
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 27.699708938598633,
+      "input_hash": "c5ae91707c4c12d6",
+      "result_hash": "9b28d7ed3d17c7f5"
+    },
+    {
+      "view_id": "view:system-latest",
+      "view_name": "Latest",
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 0.339508056640625,
+      "input_hash": "c5ae91707c4c12d6",
+      "result_hash": "e4d537de7a6a7bf0"
+    },
+    {
+      "view_id": "view:system-best-articles",
+      "view_name": "Best Articles",
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "result_count": 11,
+      "computation_time_ms": 0.6785392761230469,
+      "input_hash": "08cc9329b579f232",
+      "result_hash": "7e7798eeec36d231"
+    },
+    {
+      "view_id": "view:system-hot-(hn-style)",
+      "view_name": "Hot (HN-style)",
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "result_count": 50,
+      "computation_time_ms": 38.46621513366699,
+      "input_hash": "867b67cfd3b89732",
+      "result_hash": "e42b49665c26d918"
+    },
+    {
+      "view_id": "view:hot-main",
+      "view_name": "Hot in Main",
+      "timestamp": "2026-04-24T04:35:55.426447",
+      "result_count": 0,
+      "computation_time_ms": 0.020265579223632812,
+      "input_hash": "4f53cda18c2baa0c",
+      "result_hash": "4f53cda18c2baa0c"
+    }
+  ],
+  "discovery_metrics": [
+    {
+      "timestamp": "2026-04-24T03:39:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 0,
+      "rising_stars": 10,
+      "total_time_ms": 0.6968975067138672
+    },
+    {
+      "timestamp": "2026-04-24T03:44:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 1,
+      "rising_stars": 10,
+      "total_time_ms": 0.6635189056396484
+    },
+    {
+      "timestamp": "2026-04-24T03:49:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 1,
+      "rising_stars": 10,
+      "total_time_ms": 0.6594657897949219
+    },
+    {
+      "timestamp": "2026-04-24T03:54:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 1,
+      "rising_stars": 10,
+      "total_time_ms": 0.92315673828125
+    },
+    {
+      "timestamp": "2026-04-24T03:59:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 1,
+      "rising_stars": 10,
+      "total_time_ms": 0.9934902191162109
+    },
+    {
+      "timestamp": "2026-04-24T04:04:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 2,
+      "rising_stars": 10,
+      "total_time_ms": 0.9274482727050781
+    },
+    {
+      "timestamp": "2026-04-24T04:09:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 2,
+      "rising_stars": 10,
+      "total_time_ms": 1.0144710540771484
+    },
+    {
+      "timestamp": "2026-04-24T04:14:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 2,
+      "rising_stars": 10,
+      "total_time_ms": 0.9443759918212891
+    },
+    {
+      "timestamp": "2026-04-24T04:19:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 2,
+      "rising_stars": 10,
+      "total_time_ms": 1.0132789611816406
+    },
+    {
+      "timestamp": "2026-04-24T04:24:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 3,
+      "rising_stars": 10,
+      "total_time_ms": 0.9963512420654297
+    },
+    {
+      "timestamp": "2026-04-24T04:29:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 3,
+      "rising_stars": 10,
+      "total_time_ms": 1.0471343994140625
+    },
+    {
+      "timestamp": "2026-04-24T04:34:15.426447",
+      "follows_of_follows_count": 0,
+      "search_results": 3,
+      "rising_stars": 10,
+      "total_time_ms": 0.9899139404296875
+    }
+  ]
+}

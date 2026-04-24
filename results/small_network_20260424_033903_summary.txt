@@ -1,0 +1,23 @@
+
+============================================================
+SIMULATION RESULTS: Small Network
+============================================================
+
+Storage:
+  Entities:     105
+  Content:      1
+  Links:        9
+  Total:        115
+  Size:         0.02 MB
+
+Link breakdown:
+  react: 8
+  membership: 1
+
+View execution:
+  Total executions: 15
+  Avg time:         0.01 ms
+  P50 time:         0.00 ms
+  P95 time:         0.04 ms
+
+============================================================
