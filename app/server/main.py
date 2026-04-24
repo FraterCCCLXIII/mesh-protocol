@@ -376,11 +376,20 @@ class Storage:
         row = await cursor.fetchone()
         if not row:
             return None
+        
+        # Handle body - could be JSON object or plain string
+        body = row['body']
+        if body and body.startswith('{'):
+            try:
+                body = json.loads(body)
+            except json.JSONDecodeError:
+                pass  # Keep as string
+        
         return Content(
             id=row['id'],
             author=row['author'],
             kind=ContentKind(row['kind']),
-            body=json.loads(row['body']),
+            body=body,
             reply_to=row['reply_to'],
             created_at=datetime.fromisoformat(row['created_at']),
             access=AccessType(row['access']),
@@ -2134,9 +2143,10 @@ async def stripe_webhook(request):
 
 # Federation endpoints
 @app.get("/api/federation/nodes")
+@app.get("/api/federation/peers")
 async def list_known_nodes():
-    """List known federation nodes."""
-    return {"items": list(known_nodes.values())}
+    """List known federation nodes/peers."""
+    return {"items": list(known_nodes.values()), "peers": list(known_nodes.values())}
 
 
 @app.post("/api/federation/nodes")
@@ -2149,7 +2159,43 @@ async def register_node(node: NodeInfo):
         "features": node.features,
         "last_seen": datetime.utcnow().isoformat(),
     }
-    return {"status": "registered"}
+    return {"status": "registered", "id": node.node_id}
+
+
+@app.post("/api/federation/peers")
+async def register_peer(req: dict):
+    """Register a federation peer by URL."""
+    import httpx
+    url = req.get("url", "").rstrip("/")
+    if not url:
+        raise HTTPException(status_code=400, detail="url required")
+    
+    # Discover peer
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.get(f"{url}/.well-known/mesh-node")
+            r.raise_for_status()
+            info = r.json()
+            
+            known_nodes[url] = {
+                "node_id": info.get("node_id"),
+                "node_url": url,
+                "protocol_version": info.get("protocol_version"),
+                "features": info.get("features", []),
+                "last_seen": datetime.utcnow().isoformat(),
+            }
+            
+            # Register ourselves with peer
+            await client.post(f"{url}/api/federation/nodes", json={
+                "node_id": NODE_ID,
+                "node_url": NODE_URL,
+                "protocol_version": "1.1",
+                "features": ["entities", "content", "links", "groups", "federation"],
+            })
+            
+            return {"status": "registered", "id": info.get("node_id"), "peer": known_nodes[url]}
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to connect: {e}")
 
 
 @app.post("/api/federation/connect")
@@ -2207,6 +2253,157 @@ async def sync_entity(entity_id: str, since_seq: int = 0):
         "events": [e.to_dict() for e in events],
         "head_seq": await storage.get_log_seq(entity_id),
     }
+
+
+@app.get("/api/federation/sync")
+async def federation_sync_get(limit: int = 100):
+    """Get all data for federation sync."""
+    # Get entities
+    cursor = await storage.db.execute("SELECT * FROM entities ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = await cursor.fetchall()
+    entities = []
+    for row in rows:
+        entity = await storage.get_entity(row['id'])
+        if entity:
+            entities.append(entity.to_dict())
+    
+    # Get content
+    cursor = await storage.db.execute("SELECT * FROM content WHERE access = 'public' AND tombstone = 0 ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = await cursor.fetchall()
+    content = []
+    for row in rows:
+        c = await storage.get_content(row['id'])
+        if c:
+            content.append(c.to_dict())
+    
+    return {
+        "entities": entities,
+        "content": content,
+        "node_id": NODE_ID,
+        "node_url": NODE_URL,
+    }
+
+
+@app.post("/api/federation/sync")
+async def federation_sync_post(req: dict):
+    """Receive sync data from another node."""
+    imported = {"entities": 0, "content": 0}
+    
+    # Import entities
+    for e in req.get("entities", []):
+        existing = await storage.get_entity(e.get("id"))
+        if not existing:
+            try:
+                await storage.db.execute('''
+                    INSERT INTO entities (id, kind, public_key, handle, profile, created_at, updated_at, sig)
+                    VALUES (?, 'user', ?, ?, ?, ?, ?, ?)
+                ''', (
+                    e.get("id"),
+                    e.get("public_key", ""),
+                    e.get("handle"),
+                    json.dumps(e.get("profile", {})),
+                    e.get("created_at", datetime.utcnow().isoformat()),
+                    datetime.utcnow().isoformat(),
+                    b""
+                ))
+                await storage.db.commit()
+                imported["entities"] += 1
+            except Exception as ex:
+                pass  # Skip duplicates
+    
+    # Import content
+    for c in req.get("content", []):
+        existing = await storage.get_content(c.get("id"))
+        if not existing:
+            try:
+                await storage.db.execute('''
+                    INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig, tombstone)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, 0)
+                ''', (
+                    c.get("id"),
+                    c.get("author"),
+                    c.get("kind", "post"),
+                    c.get("body", ""),
+                    c.get("reply_to"),
+                    c.get("created_at", datetime.utcnow().isoformat()),
+                    c.get("access", "public"),
+                    b""
+                ))
+                await storage.db.commit()
+                imported["content"] += 1
+            except Exception as ex:
+                pass  # Skip duplicates
+    
+    return {"status": "synced", "imported": imported}
+
+
+@app.get("/api/resolve/{handle}")
+async def resolve_handle(handle: str):
+    """Resolve a handle to an entity ID."""
+    # Remove @ prefix if present
+    handle = handle.lstrip("@")
+    
+    # Try local lookup
+    cursor = await storage.db.execute("SELECT id FROM entities WHERE handle = ?", (handle,))
+    row = await cursor.fetchone()
+    if row:
+        entity = await storage.get_entity(row['id'])
+        if entity:
+            return {
+                "id": entity.id,
+                "handle": entity.handle,
+                "profile": entity.profile,
+                "relay_hints": [NODE_URL],
+            }
+    
+    # Try federation lookup
+    for node_url, node_info in known_nodes.items():
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5) as client:
+                r = await client.get(f"{node_url}/api/entities/by-handle/{handle}")
+                if r.status_code == 200:
+                    data = r.json()
+                    return {
+                        "id": data.get("id"),
+                        "handle": data.get("handle"),
+                        "profile": data.get("profile"),
+                        "relay_hints": [node_url],
+                    }
+        except:
+            pass
+    
+    raise HTTPException(status_code=404, detail="Handle not found")
+
+
+@app.get("/api/federation/discover")
+async def federation_discover(handle: str = None, entity_id: str = None):
+    """Discover an entity across federated nodes."""
+    if not handle and not entity_id:
+        raise HTTPException(status_code=400, detail="handle or entity_id required")
+    
+    results = []
+    
+    for node_url, node_info in known_nodes.items():
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5) as client:
+                if handle:
+                    r = await client.get(f"{node_url}/api/entities/by-handle/{handle}")
+                else:
+                    r = await client.get(f"{node_url}/api/entities/{entity_id}")
+                
+                if r.status_code == 200:
+                    data = r.json()
+                    results.append({
+                        "entity": data,
+                        "node_url": node_url,
+                        "node_id": node_info.get("node_id"),
+                    })
+        except:
+            pass
+    
+    return {"results": results, "hints": [r["node_url"] for r in results]}
 
 
 @app.get("/api/federation/content")
