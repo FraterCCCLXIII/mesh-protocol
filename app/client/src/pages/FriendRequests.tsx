@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger, tabsTriggerUnderlineClasses } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiCall } from '@/lib/mesh';
 import { 
@@ -113,13 +114,13 @@ export default function FriendRequests() {
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
           <TabsTrigger 
             value="received"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3 flex-1"
+            className={cn('flex-1 px-6 py-3 data-[state=active]:bg-transparent', tabsTriggerUnderlineClasses)}
           >
             Received ({receivedRequests.length})
           </TabsTrigger>
           <TabsTrigger 
             value="sent"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3 flex-1"
+            className={cn('flex-1 px-6 py-3 data-[state=active]:bg-transparent', tabsTriggerUnderlineClasses)}
           >
             Sent ({sentRequests.length})
           </TabsTrigger>

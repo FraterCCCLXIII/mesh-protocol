@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { AppPageShell } from '@/components/AppPageShell';
 import { 
   User, Bell, Shield, Palette, Key, Smartphone, 
   LogOut, Trash2, Download, Upload, Check, Loader2,
@@ -147,7 +148,8 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <AppPageShell>
+    <div className="mx-auto w-full max-w-2xl p-4">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="profile">
@@ -479,5 +481,6 @@ export default function Settings() {
         </TabsContent>
       </Tabs>
     </div>
+    </AppPageShell>
   );
 }

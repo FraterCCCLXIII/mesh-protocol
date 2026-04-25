@@ -109,7 +109,7 @@ export function HomePage() {
         <aside className="w-80 p-4 hidden lg:block">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">About MESH</CardTitle>
+              <CardTitle className="text-base">About Holons</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               <p>

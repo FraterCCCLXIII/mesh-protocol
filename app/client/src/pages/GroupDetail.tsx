@@ -6,13 +6,15 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger, tabsTriggerUnderlineClasses } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostCard } from '@/components/PostCard';
+import { AppPageShell } from '@/components/AppPageShell';
 import { 
   Users, Settings, Shield, UserPlus, UserMinus, 
   Crown, Ban, AlertTriangle, Check, X, Loader2,
@@ -259,22 +261,27 @@ export default function GroupDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <AppPageShell>
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppPageShell>
     );
   }
 
   if (!group) {
     return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">Group not found</p>
-      </div>
+      <AppPageShell>
+        <div className="p-8 text-center">
+          <p className="text-muted-foreground">Group not found</p>
+        </div>
+      </AppPageShell>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <AppPageShell>
+    <div className="mx-auto w-full max-w-4xl">
       {/* Group Header */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-8 border-b">
         <div className="flex items-start gap-6">
@@ -312,20 +319,20 @@ export default function GroupDetail() {
         <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
           <TabsTrigger 
             value="posts"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3"
+            className={cn('px-6 py-3 data-[state=active]:bg-transparent', tabsTriggerUnderlineClasses)}
           >
             Posts
           </TabsTrigger>
           <TabsTrigger 
             value="members"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3"
+            className={cn('px-6 py-3 data-[state=active]:bg-transparent', tabsTriggerUnderlineClasses)}
           >
             Members
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger 
               value="admin"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3"
+              className={cn('px-6 py-3 data-[state=active]:bg-transparent', tabsTriggerUnderlineClasses)}
               onClick={() => loadBannedUsers()}
             >
               <Shield className="h-4 w-4 mr-2" />
@@ -508,5 +515,6 @@ export default function GroupDetail() {
         </DialogContent>
       </Dialog>
     </div>
+    </AppPageShell>
   );
 }

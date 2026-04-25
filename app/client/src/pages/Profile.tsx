@@ -3,9 +3,12 @@ import { useParams, Link } from "react-router-dom";
 import { Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Loader2, ArrowLeft, UserCheck, Users, Clock } from "lucide-react";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger, tabsTriggerUnderlineClasses } from "../components/ui/tabs";
+import { cn } from "../lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { PostCard } from "../components/PostCard";
+import { Sidebar } from "../components/Sidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { getStoredUser, apiCall, getUserByHandle, getStoredToken } from "../lib/mesh";
 
 interface User {
@@ -34,6 +37,12 @@ interface FollowUser {
 }
 
 type FriendshipStatus = 'self' | 'friends' | 'request_sent' | 'request_received' | 'none';
+
+/** Single 2px solid underline; active = black in light, white in dark. */
+const PROFILE_TAB_TRIGGER = cn(
+  "flex-1 bg-transparent px-6 py-3 text-sm font-medium text-muted-foreground shadow-none ring-offset-0 transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none",
+  tabsTriggerUnderlineClasses
+);
 
 export function ProfilePage() {
   const { handle } = useParams();
@@ -273,17 +282,27 @@ export function ProfilePage() {
     });
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur border-b z-10 p-4 flex items-center gap-4">
-        <Link to="/">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="font-bold">{user?.profile?.name || user?.handle || "Profile"}</h1>
-          {user && <p className="text-sm text-muted-foreground">{posts.length} posts</p>}
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto flex max-w-6xl">
+        <Sidebar />
+
+        <main className="min-h-screen flex-1 border-x border-border">
+      {/* Header — same structure as Home (sticky + backdrop) */}
+      <div className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+        <div className="flex items-center gap-4 p-4">
+          <Link to="/">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold">
+              {user?.profile?.name || user?.handle || "Profile"}
+            </h1>
+            {user && (
+              <p className="text-sm text-muted-foreground">{posts.length} posts</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -406,28 +425,19 @@ export function ProfilePage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
-              <TabsTrigger 
-                value="posts"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3 flex-1"
-              >
+            <TabsList className="inline-flex h-auto w-full items-stretch justify-start gap-0 rounded-none border-0 bg-transparent p-0">
+              <TabsTrigger value="posts" className={PROFILE_TAB_TRIGGER}>
                 Posts
               </TabsTrigger>
-              <TabsTrigger 
-                value="replies"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3 flex-1"
-              >
+              <TabsTrigger value="replies" className={PROFILE_TAB_TRIGGER}>
                 Replies
               </TabsTrigger>
-              <TabsTrigger 
-                value="likes"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-6 py-3 flex-1"
-              >
+              <TabsTrigger value="likes" className={PROFILE_TAB_TRIGGER}>
                 Likes
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="posts">
+            <TabsContent value="posts" className="mt-0 focus-visible:outline-none">
               {posts.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
                   No posts yet
@@ -437,13 +447,13 @@ export function ProfilePage() {
               )}
             </TabsContent>
 
-            <TabsContent value="replies">
+            <TabsContent value="replies" className="mt-0 focus-visible:outline-none">
               <div className="p-8 text-center text-muted-foreground">
                 No replies yet
               </div>
             </TabsContent>
 
-            <TabsContent value="likes">
+            <TabsContent value="likes" className="mt-0 focus-visible:outline-none">
               <div className="p-8 text-center text-muted-foreground">
                 No likes yet
               </div>
@@ -544,6 +554,22 @@ export function ProfilePage() {
           </div>
         </DialogContent>
       </Dialog>
+        </main>
+
+        <aside className="hidden w-80 p-4 lg:block">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">About Holons</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <p>
+                Public profiles, follows, and posts — use search and notifications
+                to stay up to date across the network.
+              </p>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

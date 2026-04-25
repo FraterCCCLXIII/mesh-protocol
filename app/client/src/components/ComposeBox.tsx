@@ -106,7 +106,8 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
               <span className={`text-sm ${text.length > 260 ? "text-destructive" : "text-muted-foreground"}`}>
                 {text.length}/280
               </span>
-              <Button 
+              <Button
+                variant="invert"
                 onClick={handleSubmit}
                 disabled={!text.trim() || posting || text.length > 280}
                 className="rounded-full px-4"

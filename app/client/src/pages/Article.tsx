@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { apiCall, getStoredUser } from "../lib/mesh";
+import { AppPageShell } from "../components/AppPageShell";
 
 interface Article {
   id: string;
@@ -67,17 +68,21 @@ export function ArticlePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
+      <AppPageShell>
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </AppPageShell>
     );
   }
 
   if (!article) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Article not found</p>
-      </div>
+      <AppPageShell>
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <p className="text-muted-foreground">Article not found</p>
+        </div>
+      </AppPageShell>
     );
   }
 
@@ -85,7 +90,8 @@ export function ArticlePage() {
   const readTime = Math.ceil(wordCount / 200);
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppPageShell>
+    <div className="min-h-screen w-full bg-background">
       <header className="border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <Link to={`/publications/${article.publication_id}`}>
@@ -168,5 +174,8 @@ export function ArticlePage() {
         )}
       </article>
     </div>
+    </AppPageShell>
   );
 }
+
+export default ArticlePage;

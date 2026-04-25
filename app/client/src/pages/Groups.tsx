@@ -176,3 +176,5 @@ export function GroupsPage() {
     </div>
   );
 }
+
+export default GroupsPage;

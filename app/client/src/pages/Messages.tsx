@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { AppPageShell } from '@/components/AppPageShell';
 import { 
   MessageCircle, Send, Search, Lock, ArrowLeft, 
   Plus, Check, CheckCheck 
@@ -169,7 +170,8 @@ export default function Messages() {
   const selectedChat = conversations.find(c => c.participantId === selectedConversation);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
+    <AppPageShell>
+    <div className="flex h-[calc(100vh-8.5rem)] w-full min-h-0 bg-background md:h-[min(100dvh,100vh)]">
       {/* Conversations List */}
       <div className={`w-full md:w-80 border-r flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b">
@@ -369,5 +371,6 @@ export default function Messages() {
         )}
       </div>
     </div>
+    </AppPageShell>
   );
 }

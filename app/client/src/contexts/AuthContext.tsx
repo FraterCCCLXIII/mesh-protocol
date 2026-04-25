@@ -7,7 +7,7 @@
  * 3. Keys are NEVER sent unencrypted to vault
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { VaultClient, VaultKeys } from '@/lib/vault';
+import { VaultClient, type VaultKeys } from '@/lib/vault';
 
 interface User {
   id: string;           // Vault user ID

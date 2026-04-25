@@ -128,3 +128,5 @@ export function NewPublicationPage() {
     </div>
   );
 }
+
+export default NewPublicationPage;

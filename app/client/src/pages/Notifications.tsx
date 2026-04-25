@@ -5,13 +5,15 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent, tabsTriggerUnderlineClasses } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiCall } from '@/lib/mesh';
 import { 
   Bell, Heart, MessageCircle, UserPlus, Repeat2, 
   AtSign, CheckCheck, Settings, Users, UserCheck, Loader2
 } from 'lucide-react';
+import { AppPageShell } from '@/components/AppPageShell';
 
 interface Notification {
   id: string;
@@ -34,6 +36,12 @@ interface FriendRequest {
 
 const API_URL = '/api';
 
+/** Match Search: single row, horizontal scroll; underline active border. */
+const NOTIF_TAB_TRIGGER_CLASS = cn(
+  'inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 bg-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground shadow-none ring-offset-0 transition-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:-mb-px data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-5',
+  tabsTriggerUnderlineClasses
+);
+
 export default function Notifications() {
   const { token } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -41,6 +49,12 @@ export default function Notifications() {
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'mentions' | 'requests'>('all');
+
+  function setFilterFromTab(v: string) {
+    if (v === 'all' || v === 'mentions' || v === 'requests') {
+      setFilter(v);
+    }
+  }
 
   useEffect(() => {
     if (token) {
@@ -161,63 +175,159 @@ export default function Notifications() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
-  const filteredNotifications = filter === 'mentions' 
-    ? notifications.filter(n => n.type === 'mention')
-    : notifications;
+  const mentionNotifications = notifications.filter(n => n.type === 'mention');
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur border-b z-10">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-xl font-bold">Notifications</h1>
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllRead}>
-                <CheckCheck className="h-4 w-4 mr-2" />
-                Mark all read
+    <AppPageShell>
+      <Tabs value={filter} onValueChange={setFilterFromTab} className="w-full min-w-0">
+        {/* Header + tab row (sticky) */}
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <h1 className="text-xl font-bold">Notifications</h1>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={markAllRead}>
+                  <CheckCheck className="h-4 w-4 mr-2" />
+                  Mark all read
+                </Button>
+              )}
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
               </Button>
-            )}
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
+            </div>
           </div>
-        </div>
-        
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
-            <TabsTrigger 
-              value="all"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-            >
+
+          <TabsList className="h-auto w-full min-w-0 flex-nowrap justify-start gap-0 overflow-x-auto rounded-none border-0 border-b border-border bg-transparent p-0 [scrollbar-width:thin]">
+            <TabsTrigger value="all" className={NOTIF_TAB_TRIGGER_CLASS}>
               All
             </TabsTrigger>
-            <TabsTrigger 
-              value="mentions"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
-            >
+            <TabsTrigger value="mentions" className={NOTIF_TAB_TRIGGER_CLASS}>
               Mentions
             </TabsTrigger>
-            <TabsTrigger 
-              value="requests"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3 relative"
-            >
-              Friend Requests
+            <TabsTrigger value="requests" className={NOTIF_TAB_TRIGGER_CLASS}>
+              <span className="shrink-0">Friend requests</span>
               {friendRequests.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="ml-0.5 inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
                   {friendRequests.length}
                 </span>
               )}
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
 
-      {/* Friend Requests Section */}
-      {filter === 'requests' && (
-        <div>
+        <TabsContent value="all" className="mt-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+          <div>
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">Loading notifications...</div>
+            ) : notifications.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No notifications yet</p>
+                <p className="text-sm mt-2">
+                  When someone interacts with your posts, you'll see it here.
+                </p>
+              </div>
+            ) : (
+              notifications.map(notif => (
+                <Link
+                  key={notif.id}
+                  to={notif.targetId ? `/post/${notif.targetId}` : `/profile/${notif.actorHandle}`}
+                  className={`flex gap-4 p-4 border-b hover:bg-muted/50 transition ${
+                    !notif.read ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  <div className="shrink-0 mt-1">{getIcon(notif.type)}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {notif.actorName[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p>
+                          <span className="font-semibold">{notif.actorName}</span>{' '}
+                          <span className="text-muted-foreground">{getMessage(notif)}</span>
+                        </p>
+                        {notif.targetPreview && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {notif.targetPreview}
+                          </p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {formatTime(notif.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  {!notif.read && (
+                    <div className="shrink-0 self-start pt-1">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    </div>
+                  )}
+                </Link>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="mentions" className="mt-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+          <div>
+            {isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">Loading notifications...</div>
+            ) : mentionNotifications.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <AtSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No mentions yet</p>
+                <p className="text-sm mt-2">When someone @mentions you, it will show here.</p>
+              </div>
+            ) : (
+              mentionNotifications.map(notif => (
+                <Link
+                  key={notif.id}
+                  to={notif.targetId ? `/post/${notif.targetId}` : `/profile/${notif.actorHandle}`}
+                  className={`flex gap-4 p-4 border-b hover:bg-muted/50 transition ${
+                    !notif.read ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  <div className="shrink-0 mt-1">{getIcon(notif.type)}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {notif.actorName[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p>
+                          <span className="font-semibold">{notif.actorName}</span>{' '}
+                          <span className="text-muted-foreground">{getMessage(notif)}</span>
+                        </p>
+                        {notif.targetPreview && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {notif.targetPreview}
+                          </p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {formatTime(notif.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                  {!notif.read && (
+                    <div className="shrink-0 self-start pt-1">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    </div>
+                  )}
+                </Link>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="requests" className="mt-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0">
           {friendRequests.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -233,14 +343,14 @@ export default function Notifications() {
                     </AvatarFallback>
                   </Avatar>
                 </Link>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <Link to={`/profile/${req.handle}`} className="hover:underline">
                     <p className="font-semibold">{req.profile?.name || req.handle}</p>
                   </Link>
                   <p className="text-sm text-muted-foreground">@{req.handle}</p>
                   <p className="text-xs text-muted-foreground">{formatTime(req.created_at)}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <Button
                     size="sm"
                     onClick={() => acceptFriendRequest(req.from_id)}
@@ -267,70 +377,8 @@ export default function Notifications() {
               </div>
             ))
           )}
-        </div>
-      )}
-
-      {/* Notifications List */}
-      {filter !== 'requests' && (
-      <div>
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">
-            Loading notifications...
-          </div>
-        ) : filteredNotifications.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No notifications yet</p>
-            <p className="text-sm mt-2">
-              When someone interacts with your posts, you'll see it here.
-            </p>
-          </div>
-        ) : (
-          filteredNotifications.map(notif => (
-            <Link
-              key={notif.id}
-              to={notif.targetId ? `/post/${notif.targetId}` : `/profile/${notif.actorHandle}`}
-              className={`flex gap-4 p-4 border-b hover:bg-muted/50 transition ${
-                !notif.read ? 'bg-primary/5' : ''
-              }`}
-            >
-              <div className="flex-shrink-0 mt-1">
-                {getIcon(notif.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {notif.actorName[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p>
-                      <span className="font-semibold">{notif.actorName}</span>
-                      {' '}
-                      <span className="text-muted-foreground">{getMessage(notif)}</span>
-                    </p>
-                    {notif.targetPreview && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {notif.targetPreview}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-sm text-muted-foreground flex-shrink-0">
-                    {formatTime(notif.createdAt)}
-                  </span>
-                </div>
-              </div>
-              {!notif.read && (
-                <div className="flex-shrink-0">
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-              )}
-            </Link>
-          ))
-        )}
-      </div>
-      )}
-    </div>
+        </TabsContent>
+      </Tabs>
+    </AppPageShell>
   );
 }

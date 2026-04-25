@@ -2,6 +2,10 @@ import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { cn } from "@/lib/utils"
 
+/** Reusable classes for underline-style tabs: 2px bottom; active = black (light) / white (dark). */
+export const tabsTriggerUnderlineClasses =
+  "rounded-none border-t-0 border-l-0 border-r-0 border-b-2 border-transparent data-[state=active]:border-b-2 data-[state=active]:border-b-black data-[state=active]:border-t-0 data-[state=active]:border-l-0 data-[state=active]:border-r-0 dark:data-[state=active]:border-b-white"
+
 const Tabs = TabsPrimitive.Root
 
 const TabsList = React.forwardRef<

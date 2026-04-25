@@ -199,3 +199,5 @@ export function PostDetailPage() {
     </div>
   );
 }
+
+export default PostDetailPage;

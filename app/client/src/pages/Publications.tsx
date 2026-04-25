@@ -134,3 +134,5 @@ export function PublicationsPage() {
     </div>
   );
 }
+
+export default PublicationsPage;

@@ -186,3 +186,5 @@ export function PublicationDetailPage() {
     </div>
   );
 }
+
+export default PublicationDetailPage;

@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Send } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { apiCall, getStoredUser } from "../lib/mesh";
+import { AppPageShell } from "../components/AppPageShell";
 
 export function WritePage() {
   const navigate = useNavigate();
@@ -63,26 +64,30 @@ export function WritePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Please log in to write articles</p>
-      </div>
+      <AppPageShell>
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <p className="text-muted-foreground">Please log in to write articles</p>
+        </div>
+      </AppPageShell>
     );
   }
 
   if (!publicationId) {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-        <p className="text-muted-foreground">Select a publication to write for</p>
-        <Link to="/publications">
-          <Button>Browse Publications</Button>
-        </Link>
-      </div>
+      <AppPageShell>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4">
+          <p className="text-muted-foreground">Select a publication to write for</p>
+          <Link to="/publications">
+            <Button>Browse Publications</Button>
+          </Link>
+        </div>
+      </AppPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto">
+    <AppPageShell>
+      <div className="mx-auto w-full min-h-screen max-w-4xl bg-background">
         <header className="sticky top-0 z-10 bg-background border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4">
@@ -122,7 +127,7 @@ export function WritePage() {
           </div>
         </header>
 
-        <main className="p-8">
+        <div className="p-8">
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
               {error}
@@ -151,7 +156,7 @@ export function WritePage() {
               className="w-full min-h-[500px] text-lg leading-relaxed border-0 resize-none focus:outline-none"
             />
           </div>
-        </main>
+        </div>
 
         <footer className="fixed bottom-0 left-0 right-0 border-t bg-background/80 backdrop-blur">
           <div className="max-w-4xl mx-auto px-8 py-3 flex justify-between text-sm text-muted-foreground">
@@ -160,6 +165,8 @@ export function WritePage() {
           </div>
         </footer>
       </div>
-    </div>
+    </AppPageShell>
   );
 }
+
+export default WritePage;

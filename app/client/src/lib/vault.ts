@@ -247,17 +247,6 @@ async function decryptWithPassword(
   return decrypted;
 }
 
-/**
- * Generate entity ID from public key
- */
-function generateEntityId(publicKey: Uint8Array): string {
-  const hash = nacl.hash(publicKey);
-  const hex = Array.from(hash.slice(0, 16))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return `ent:${hex}`;
-}
-
 // ========== Error ==========
 
 export class VaultError extends Error {

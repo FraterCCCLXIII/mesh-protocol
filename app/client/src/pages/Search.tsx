@@ -6,9 +6,11 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, tabsTriggerUnderlineClasses } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostCard } from '@/components/PostCard';
+import { AppPageShell } from '@/components/AppPageShell';
 import { Search as SearchIcon, Users, FileText, Hash, TrendingUp } from 'lucide-react';
 
 interface SearchResult {
@@ -18,6 +20,11 @@ interface SearchResult {
 }
 
 const API_URL = '/api';
+
+const SEARCH_TAB_TRIGGER_CLASS = cn(
+  'inline-flex shrink-0 min-h-11 items-center justify-center gap-1.5 whitespace-nowrap bg-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground shadow-none ring-offset-0 transition-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:-mb-px data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none sm:px-4',
+  tabsTriggerUnderlineClasses
+);
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,6 +36,12 @@ export default function Search() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'users' | 'posts' | 'groups'>('all');
   const [trending, setTrending] = useState<string[]>([]);
+
+  function setActiveTabFromValue(v: string) {
+    if (v === 'all' || v === 'users' || v === 'posts' || v === 'groups') {
+      setActiveTab(v);
+    }
+  }
 
   useEffect(() => {
     if (query) {
@@ -83,65 +96,55 @@ export default function Search() {
   const groupResults = results.filter(r => r.type === 'group');
 
   return (
-    <div className="max-w-2xl mx-auto">
-      {/* Search Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur border-b z-10 p-4">
-        <form onSubmit={handleSearch}>
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search MESH..."
-              className="pl-9 pr-20"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-            <Button 
-              type="submit" 
-              size="sm" 
-              className="absolute right-1 top-1"
-              disabled={!searchQuery.trim()}
-            >
-              Search
-            </Button>
-          </div>
-        </form>
-      </div>
-
-      {query ? (
-        <>
-          {/* Results Tabs */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
-              <TabsTrigger 
-                value="all"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+    <AppPageShell>
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur">
+        <div className="border-b border-border p-4">
+          <form onSubmit={handleSearch}>
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search Holons..."
+                className="pl-9 pr-20"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="absolute right-1 top-1"
+                disabled={!searchQuery.trim()}
               >
+                Search
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        {query ? (
+          <Tabs value={activeTab} onValueChange={setActiveTabFromValue}>
+            <TabsList className="h-auto w-full min-w-0 flex-nowrap justify-start gap-0 overflow-x-auto rounded-none border-0 border-b border-border bg-transparent p-0 [scrollbar-width:thin]">
+              <TabsTrigger value="all" className={SEARCH_TAB_TRIGGER_CLASS}>
                 All
               </TabsTrigger>
-              <TabsTrigger 
-                value="users"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <Users className="h-4 w-4 mr-2" />
+              <TabsTrigger value="users" className={SEARCH_TAB_TRIGGER_CLASS}>
+                <Users className="h-4 w-4 shrink-0" />
                 People ({userResults.length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="posts"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <FileText className="h-4 w-4 mr-2" />
+              <TabsTrigger value="posts" className={SEARCH_TAB_TRIGGER_CLASS}>
+                <FileText className="h-4 w-4 shrink-0" />
                 Posts ({postResults.length})
               </TabsTrigger>
-              <TabsTrigger 
-                value="groups"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <Hash className="h-4 w-4 mr-2" />
+              <TabsTrigger value="groups" className={SEARCH_TAB_TRIGGER_CLASS}>
+                <Hash className="h-4 w-4 shrink-0" />
                 Groups ({groupResults.length})
               </TabsTrigger>
             </TabsList>
           </Tabs>
+        ) : null}
+      </div>
 
+      {query ? (
+        <>
           {/* Results */}
           <div>
             {isLoading ? (
@@ -241,9 +244,8 @@ export default function Search() {
           </div>
         </>
       ) : (
-        /* Trending / Explore */
         <div className="p-4">
-          <h2 className="font-bold text-xl mb-4 flex items-center gap-2">
+          <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
             <TrendingUp className="h-5 w-5" />
             Trending
           </h2>
@@ -254,7 +256,8 @@ export default function Search() {
               {trending.map((topic, i) => (
                 <button
                   key={topic}
-                  className="w-full text-left p-3 rounded-lg hover:bg-muted transition"
+                  type="button"
+                  className="w-full rounded-lg p-3 text-left transition hover:bg-muted"
                   onClick={() => {
                     setSearchQuery(topic);
                     setSearchParams({ q: topic });
@@ -270,6 +273,6 @@ export default function Search() {
           )}
         </div>
       )}
-    </div>
+    </AppPageShell>
   );
 }
