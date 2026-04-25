@@ -13,23 +13,43 @@ interface Post {
   author: string;
   author_handle?: string;
   author_profile?: { name?: string };
-  body: { text?: string };
+  body: { text?: string } | string;
   created_at: string;
   like_count: number;
   reply_count: number;
   liked?: boolean;
+  liked_by_me?: boolean;
+  moderation_labels?: Array<{ type: string; issuer: string; id?: string }>;
 }
 
 export function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMeta, setViewMeta] = useState<{ view_cost?: Record<string, unknown>; labels_status?: string } | null>(null);
   const [user, setUser] = useState(getStoredUser());
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiCall<{ items: Post[] }>("/api/content?limit=50");
-      setPosts(data.items || []);
+      const u = getStoredUser();
+      if (!u) return;
+      const data = await apiCall<{
+        items: Post[];
+        view?: string;
+        view_cost?: Record<string, unknown>;
+        labels_status?: string;
+      }>(
+        `/api/users/${u.id}/feed?limit=50&offset=0&view=home_timeline&labels=1`
+      );
+      setViewMeta({
+        view_cost: data.view_cost,
+        labels_status: data.labels_status,
+      });
+      const items = (data.items || []).map((p) => ({
+        ...p,
+        liked: p.liked_by_me ?? p.liked,
+      }));
+      setPosts(items);
     } catch (err) {
       console.error("Failed to load posts:", err);
     } finally {
@@ -96,6 +116,15 @@ export function HomePage() {
                 A decentralized social protocol with self-sovereign identity,
                 end-to-end encryption, and verifiable feeds.
               </p>
+              {viewMeta?.view_cost && (
+                <p className="mt-2 text-xs font-mono text-muted-foreground/90">
+                  View: home_timeline · est. scan:{" "}
+                  {String((viewMeta.view_cost as { estimated_events_scanned?: number }).estimated_events_scanned ?? "—")}{" "}
+                  {viewMeta.labels_status && viewMeta.labels_status !== "off"
+                    ? `· labels: ${viewMeta.labels_status}`
+                    : ""}
+                </p>
+              )}
             </CardContent>
           </Card>
         </aside>
@@ -103,3 +132,5 @@ export function HomePage() {
     </div>
   );
 }
+
+export default HomePage;

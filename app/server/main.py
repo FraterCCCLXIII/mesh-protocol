@@ -21,9 +21,20 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from mesh_views import (
+    HOME_TIMELINE_VIEW,
+    ViewRejectionError,
+    validate_and_estimate_home_timeline,
+)
+from moderation_labels import (
+    fetch_labels_for_subjects,
+    moderation_base_url,
+    parse_issuer_allowlist,
+)
 from pydantic import BaseModel, Field
 import uvicorn
 import aiosqlite
@@ -1445,24 +1456,44 @@ async def get_friendship_status(target_id: str, current_user: str = Depends(requ
 
 
 @app.get("/api/users/{entity_id}/feed")
-async def get_feed(entity_id: str, limit: int = 50, offset: int = 0):
-    """Get feed for an entity (posts from people they follow + friends-only posts from friends)."""
+async def get_feed(
+    response: Response,
+    entity_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    view: str = "home_timeline",
+    include_labels: bool = Query(False, description="Fetch moderation attestation labels (allowlist + MESH_MODERATION_URL required)", alias="labels"),
+):
+    """
+    Named view: ``view=home_timeline`` (default) — posts from people you follow + your posts,
+    with optional friend-gated content. Enforces View Layer limits (spec §9 / Appendix C).
+    """
+    if view and view != HOME_TIMELINE_VIEW:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown view {view!r}; this relay only implements {HOME_TIMELINE_VIEW!r}",
+        )
+
     following = await storage.get_following(entity_id)
+    follow_count = len(following)  # follow edges, before including self
+    try:
+        elimit, eoff, cost = validate_and_estimate_home_timeline(
+            follow_count, limit, offset, include_labels
+        )
+    except ViewRejectionError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+
     friends = await storage.get_friends(entity_id)
     following.append(entity_id)  # Include own posts
-    
-    if not following:
-        return {"items": [], "total": 0}
-    
+
     # Build query for public posts from following + friends-only posts from actual friends
-    placeholders_following = ','.join('?' * len(following))
-    friends_set = set(friends)
-    
+    placeholders_following = ",".join("?" * len(following))
+
     query = f"""
         SELECT * FROM content 
         WHERE (
             (author IN ({placeholders_following}) AND access = 'public')
-            OR (author IN ({placeholders_following}) AND access = 'friends' AND author IN ({','.join('?' * len(friends)) if friends else "'none'"}))
+            OR (author IN ({placeholders_following}) AND access = 'friends' AND author IN ({",".join("?" * len(friends)) if friends else "'none'"}))
             OR (author = ?)
         )
         AND reply_to IS NULL
@@ -1470,49 +1501,77 @@ async def get_feed(entity_id: str, limit: int = 50, offset: int = 0):
         ORDER BY created_at DESC 
         LIMIT ? OFFSET ?
     """
-    
-    params = following + (friends if friends else []) + [entity_id, limit, offset]
+
+    params = following + (friends if friends else []) + [entity_id, elimit, eoff]
     cursor = await storage.db.execute(query, params)
     rows = await cursor.fetchall()
-    
+
     results = []
     for row in rows:
-        content = await storage.get_content(row['id'])
+        content = await storage.get_content(row["id"])
         if content:
             item = content.to_dict()
-            
+
             # Get author info
             author_entity = await storage.get_entity(content.author)
             if author_entity:
-                item['author_handle'] = author_entity.handle
-                item['author_profile'] = author_entity.profile
-            
+                item["author_handle"] = author_entity.handle
+                item["author_profile"] = author_entity.profile
+
             # Get counts
             cursor2 = await storage.db.execute(
                 "SELECT COUNT(*) as cnt FROM links WHERE target = ? AND kind = 'like' AND tombstone = 0",
-                (content.id,)
+                (content.id,),
             )
             row2 = await cursor2.fetchone()
-            item['like_count'] = row2['cnt'] if row2 else 0
-            
+            item["like_count"] = row2["cnt"] if row2 else 0
+
             cursor2 = await storage.db.execute(
                 "SELECT COUNT(*) as cnt FROM content WHERE reply_to = ?",
-                (content.id,)
+                (content.id,),
             )
             row2 = await cursor2.fetchone()
-            item['reply_count'] = row2['cnt'] if row2 else 0
-            
+            item["reply_count"] = row2["cnt"] if row2 else 0
+
             # Check if current user liked
             like_id = generate_link_id(entity_id, "like", content.id)
             cursor2 = await storage.db.execute(
                 "SELECT id FROM links WHERE id = ? AND tombstone = 0",
-                (like_id,)
+                (like_id,),
             )
-            item['liked_by_me'] = bool(await cursor2.fetchone())
-            
+            item["liked_by_me"] = bool(await cursor2.fetchone())
+
+            item["moderation_labels"] = []
             results.append(item)
-    
-    return {"items": results, "total": len(results)}
+
+    labels_status = "ok"
+    allow = parse_issuer_allowlist()
+    if include_labels:
+        if not allow or not moderation_base_url():
+            labels_status = "disabled"
+            for it in results:
+                it["moderation_labels"] = []
+        else:
+            ids = [it["id"] for it in results]
+            label_map = await fetch_labels_for_subjects(ids, allow)
+            for it in results:
+                it["moderation_labels"] = label_map.get(it["id"], [])
+    else:
+        labels_status = "off"
+        for it in results:
+            it["moderation_labels"] = []
+
+    response.headers["X-Mesh-View"] = HOME_TIMELINE_VIEW
+    response.headers["X-Mesh-View-Est-Events-Scanned"] = str(cost.estimated_events_scanned)
+    response.headers["X-Mesh-View-Attestation-Lookups"] = str(cost.attestation_lookups)
+
+    return {
+        "view": HOME_TIMELINE_VIEW,
+        "view_cost": cost.to_dict(),
+        "items": results,
+        "total": len(results),
+        "labels_status": labels_status,
+    }
 
 
 # Group endpoints

@@ -14,6 +14,9 @@ interface Post {
   like_count: number;
   reply_count: number;
   liked?: boolean;
+  liked_by_me?: boolean;
+  /** Allowlisted attestation types from moderation service — docs/TIER2_SPEC_ALIGNMENT.md */
+  moderation_labels?: Array<{ type: string; issuer: string; id?: string }>;
 }
 
 interface PostCardProps {
@@ -47,8 +50,9 @@ export function PostCard({ post, onLike }: PostCardProps) {
     const token = getStoredToken();
     if (!token) return;
     
+    const liked = post.liked ?? post.liked_by_me;
     try {
-      if (post.liked) {
+      if (liked) {
         await apiCall(`/api/content/${post.id}/unlike`, { method: "POST" });
       } else {
         await apiCall(`/api/content/${post.id}/like`, { method: "POST" });
@@ -79,6 +83,19 @@ export function PostCard({ post, onLike }: PostCardProps) {
                 {formatTime(post.created_at)}
               </span>
             </div>
+            {post.moderation_labels && post.moderation_labels.length > 0 ? (
+              <div className="flex flex-wrap gap-1 mt-1" aria-label="Moderation labels">
+                {post.moderation_labels.map((l) => (
+                  <span
+                    key={`${l.issuer}-${l.type}-${l.id || ""}`}
+                    className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-amber-500/50 text-amber-800 dark:text-amber-200 bg-amber-500/10"
+                    title={`Issuer: ${l.issuer}`}
+                  >
+                    {l.type}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <p className="mt-1 whitespace-pre-wrap break-words">
               {typeof post.body === 'string' ? post.body : post.body?.text}
             </p>
@@ -103,10 +120,10 @@ export function PostCard({ post, onLike }: PostCardProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`gap-1 ${post.liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                className={`gap-1 ${(post.liked ?? post.liked_by_me) ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
                 onClick={handleLike}
               >
-                <Heart className={`w-4 h-4 ${post.liked ? "fill-current" : ""}`} />
+                <Heart className={`w-4 h-4 ${(post.liked ?? post.liked_by_me) ? "fill-current" : ""}`} />
                 <span className="text-xs">{post.like_count || ""}</span>
               </Button>
               <Button 
