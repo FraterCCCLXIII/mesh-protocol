@@ -74,10 +74,13 @@ class LinkKind(str, Enum):
     BLOCK = "block"
     PIN = "pin"
     MODERATOR = "moderator"
+    FRIEND_REQUEST = "friend_request"  # Pending friend request
+    FRIEND = "friend"  # Accepted mutual friendship
 
 class AccessType(str, Enum):
     PUBLIC = "public"
     PRIVATE = "private"
+    FRIENDS = "friends"  # Only visible to mutual friends
     GROUP = "group"
 
 class OpType(str, Enum):
@@ -424,6 +427,42 @@ class Storage:
         """, (entity_id,))
         rows = await cursor.fetchall()
         return [row['source'] for row in rows]
+    
+    async def get_friends(self, entity_id: str):
+        """Get mutual friends (both parties have friend link)."""
+        cursor = await self.db.execute("""
+            SELECT target FROM links 
+            WHERE source = ? AND kind = 'friend' AND tombstone = 0
+        """, (entity_id,))
+        rows = await cursor.fetchall()
+        return [row['target'] for row in rows]
+    
+    async def are_friends(self, user_a: str, user_b: str) -> bool:
+        """Check if two users are mutual friends."""
+        cursor = await self.db.execute("""
+            SELECT COUNT(*) as cnt FROM links 
+            WHERE source = ? AND target = ? AND kind = 'friend' AND tombstone = 0
+        """, (user_a, user_b))
+        row = await cursor.fetchone()
+        return row['cnt'] > 0
+    
+    async def get_pending_friend_requests(self, entity_id: str):
+        """Get pending friend requests TO this user."""
+        cursor = await self.db.execute("""
+            SELECT source, created_at FROM links 
+            WHERE target = ? AND kind = 'friend_request' AND tombstone = 0
+        """, (entity_id,))
+        rows = await cursor.fetchall()
+        return [{'from': row['source'], 'created_at': row['created_at']} for row in rows]
+    
+    async def get_sent_friend_requests(self, entity_id: str):
+        """Get friend requests sent BY this user."""
+        cursor = await self.db.execute("""
+            SELECT target, created_at FROM links 
+            WHERE source = ? AND kind = 'friend_request' AND tombstone = 0
+        """, (entity_id,))
+        rows = await cursor.fetchall()
+        return [{'to': row['target'], 'created_at': row['created_at']} for row in rows]
     
     async def append_log(self, event: LogEvent):
         cursor = await self.db.execute(
@@ -1188,26 +1227,252 @@ async def get_following(entity_id: str):
     return {"items": results, "total": len(results)}
 
 
+@app.get("/api/users/{entity_id}/friends")
+async def get_friends(entity_id: str):
+    """Get friends of an entity."""
+    friends = await storage.get_friends(entity_id)
+    
+    results = []
+    for friend_id in friends:
+        entity = await storage.get_entity(friend_id)
+        if entity:
+            results.append({
+                "id": entity.id,
+                "handle": entity.handle,
+                "profile": entity.profile,
+            })
+    
+    return {"users": results, "total": len(results)}
+
+
+# ========== Friend Request Endpoints ==========
+
+@app.post("/api/friends/request")
+async def send_friend_request(req: dict, current_user: str = Depends(require_auth)):
+    """Send a friend request to another user."""
+    target_id = req.get("target_id")
+    if not target_id:
+        raise HTTPException(status_code=400, detail="target_id required")
+    
+    if target_id == current_user:
+        raise HTTPException(status_code=400, detail="Cannot send friend request to yourself")
+    
+    # Check target exists
+    target = await storage.get_entity(target_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already friends
+    if await storage.are_friends(current_user, target_id):
+        raise HTTPException(status_code=400, detail="Already friends")
+    
+    # Check if request already exists
+    pending = await storage.get_sent_friend_requests(current_user)
+    if any(r['to'] == target_id for r in pending):
+        raise HTTPException(status_code=400, detail="Friend request already sent")
+    
+    # Check if they already sent us a request - auto-accept
+    their_pending = await storage.get_pending_friend_requests(current_user)
+    if any(r['from'] == target_id for r in their_pending):
+        # Auto-accept - create mutual friendship
+        now = datetime.utcnow().isoformat()
+        
+        # Create friend links both ways
+        link_id_1 = generate_link_id(current_user, "friend", target_id)
+        link_id_2 = generate_link_id(target_id, "friend", current_user)
+        
+        await storage.db.execute("""
+            INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+            VALUES (?, ?, ?, 'friend', '{}', ?, 0, ?)
+        """, (link_id_1, current_user, target_id, now, b""))
+        
+        await storage.db.execute("""
+            INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+            VALUES (?, ?, ?, 'friend', '{}', ?, 0, ?)
+        """, (link_id_2, target_id, current_user, now, b""))
+        
+        # Remove their pending request
+        await storage.db.execute("""
+            UPDATE links SET tombstone = 1 WHERE source = ? AND target = ? AND kind = 'friend_request'
+        """, (target_id, current_user))
+        
+        await storage.db.commit()
+        return {"status": "accepted", "message": "You are now friends"}
+    
+    # Create friend request
+    link_id = generate_link_id(current_user, "friend_request", target_id)
+    now = datetime.utcnow().isoformat()
+    
+    await storage.db.execute("""
+        INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+        VALUES (?, ?, ?, 'friend_request', '{}', ?, 0, ?)
+    """, (link_id, current_user, target_id, now, b""))
+    await storage.db.commit()
+    
+    return {"status": "sent", "message": "Friend request sent"}
+
+
+@app.post("/api/friends/accept")
+async def accept_friend_request(req: dict, current_user: str = Depends(require_auth)):
+    """Accept a pending friend request."""
+    from_id = req.get("from_id")
+    if not from_id:
+        raise HTTPException(status_code=400, detail="from_id required")
+    
+    # Check pending request exists
+    pending = await storage.get_pending_friend_requests(current_user)
+    if not any(r['from'] == from_id for r in pending):
+        raise HTTPException(status_code=404, detail="No pending friend request from this user")
+    
+    now = datetime.utcnow().isoformat()
+    
+    # Create mutual friend links
+    link_id_1 = generate_link_id(current_user, "friend", from_id)
+    link_id_2 = generate_link_id(from_id, "friend", current_user)
+    
+    await storage.db.execute("""
+        INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+        VALUES (?, ?, ?, 'friend', '{}', ?, 0, ?)
+    """, (link_id_1, current_user, from_id, now, b""))
+    
+    await storage.db.execute("""
+        INSERT OR REPLACE INTO links (id, source, target, kind, data, created_at, tombstone, sig)
+        VALUES (?, ?, ?, 'friend', '{}', ?, 0, ?)
+    """, (link_id_2, from_id, current_user, now, b""))
+    
+    # Remove the pending request
+    await storage.db.execute("""
+        UPDATE links SET tombstone = 1 WHERE source = ? AND target = ? AND kind = 'friend_request'
+    """, (from_id, current_user))
+    
+    await storage.db.commit()
+    
+    return {"status": "accepted", "message": "Friend request accepted"}
+
+
+@app.post("/api/friends/reject")
+async def reject_friend_request(req: dict, current_user: str = Depends(require_auth)):
+    """Reject a pending friend request."""
+    from_id = req.get("from_id")
+    if not from_id:
+        raise HTTPException(status_code=400, detail="from_id required")
+    
+    # Remove the pending request
+    await storage.db.execute("""
+        UPDATE links SET tombstone = 1 WHERE source = ? AND target = ? AND kind = 'friend_request'
+    """, (from_id, current_user))
+    await storage.db.commit()
+    
+    return {"status": "rejected", "message": "Friend request rejected"}
+
+
+@app.delete("/api/friends/{friend_id}")
+async def remove_friend(friend_id: str, current_user: str = Depends(require_auth)):
+    """Remove a friend (unfriend)."""
+    # Remove both friend links
+    await storage.db.execute("""
+        UPDATE links SET tombstone = 1 WHERE source = ? AND target = ? AND kind = 'friend'
+    """, (current_user, friend_id))
+    
+    await storage.db.execute("""
+        UPDATE links SET tombstone = 1 WHERE source = ? AND target = ? AND kind = 'friend'
+    """, (friend_id, current_user))
+    
+    await storage.db.commit()
+    
+    return {"status": "removed", "message": "Friend removed"}
+
+
+@app.get("/api/friends/requests")
+async def get_friend_requests(current_user: str = Depends(require_auth)):
+    """Get pending friend requests for current user."""
+    pending = await storage.get_pending_friend_requests(current_user)
+    
+    results = []
+    for req in pending:
+        entity = await storage.get_entity(req['from'])
+        if entity:
+            results.append({
+                "from_id": req['from'],
+                "handle": entity.handle,
+                "profile": entity.profile,
+                "created_at": req['created_at'],
+            })
+    
+    return {"requests": results, "total": len(results)}
+
+
+@app.get("/api/friends/sent")
+async def get_sent_requests(current_user: str = Depends(require_auth)):
+    """Get friend requests sent by current user."""
+    sent = await storage.get_sent_friend_requests(current_user)
+    
+    results = []
+    for req in sent:
+        entity = await storage.get_entity(req['to'])
+        if entity:
+            results.append({
+                "to_id": req['to'],
+                "handle": entity.handle,
+                "profile": entity.profile,
+                "created_at": req['created_at'],
+            })
+    
+    return {"requests": results, "total": len(results)}
+
+
+@app.get("/api/friends/status/{target_id}")
+async def get_friendship_status(target_id: str, current_user: str = Depends(require_auth)):
+    """Get friendship status with another user."""
+    if target_id == current_user:
+        return {"status": "self"}
+    
+    # Check if friends
+    if await storage.are_friends(current_user, target_id):
+        return {"status": "friends"}
+    
+    # Check if we sent them a request
+    sent = await storage.get_sent_friend_requests(current_user)
+    if any(r['to'] == target_id for r in sent):
+        return {"status": "request_sent"}
+    
+    # Check if they sent us a request
+    pending = await storage.get_pending_friend_requests(current_user)
+    if any(r['from'] == target_id for r in pending):
+        return {"status": "request_received"}
+    
+    return {"status": "none"}
+
+
 @app.get("/api/users/{entity_id}/feed")
 async def get_feed(entity_id: str, limit: int = 50, offset: int = 0):
-    """Get feed for an entity (posts from people they follow)."""
+    """Get feed for an entity (posts from people they follow + friends-only posts from friends)."""
     following = await storage.get_following(entity_id)
+    friends = await storage.get_friends(entity_id)
     following.append(entity_id)  # Include own posts
     
     if not following:
         return {"items": [], "total": 0}
     
-    placeholders = ','.join('?' * len(following))
+    # Build query for public posts from following + friends-only posts from actual friends
+    placeholders_following = ','.join('?' * len(following))
+    friends_set = set(friends)
+    
     query = f"""
         SELECT * FROM content 
-        WHERE author IN ({placeholders}) 
-        AND access = 'public'
+        WHERE (
+            (author IN ({placeholders_following}) AND access = 'public')
+            OR (author IN ({placeholders_following}) AND access = 'friends' AND author IN ({','.join('?' * len(friends)) if friends else "'none'"}))
+            OR (author = ?)
+        )
         AND reply_to IS NULL
+        AND tombstone = 0
         ORDER BY created_at DESC 
         LIMIT ? OFFSET ?
     """
     
-    cursor = await storage.db.execute(query, following + [limit, offset])
+    params = following + (friends if friends else []) + [entity_id, limit, offset]
+    cursor = await storage.db.execute(query, params)
     rows = await cursor.fetchall()
     
     results = []

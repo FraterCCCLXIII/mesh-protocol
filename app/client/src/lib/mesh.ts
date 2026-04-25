@@ -267,7 +267,12 @@ export async function updateProfile(profile: { name?: string; bio?: string; avat
 }
 
 // Content API
-export async function createPost(text: string, replyTo?: string, media: string[] = []): Promise<{ id: string }> {
+export async function createPost(
+  text: string, 
+  replyTo?: string, 
+  access: 'public' | 'friends' | 'private' = 'public',
+  media: string[] = []
+): Promise<{ id: string }> {
   const user = getStoredUser();
   if (!user) throw new Error('Not logged in');
   
@@ -279,7 +284,7 @@ export async function createPost(text: string, replyTo?: string, media: string[]
       body: text,
       media,
       reply_to: replyTo,
-      access: 'public',
+      access,
     }),
   });
 }

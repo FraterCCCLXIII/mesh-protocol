@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Loader2, ArrowLeft } from "lucide-react";
+import { Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Loader2, ArrowLeft, UserCheck, Users, Clock } from "lucide-react";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -33,6 +33,8 @@ interface FollowUser {
   profile: { name?: string };
 }
 
+type FriendshipStatus = 'self' | 'friends' | 'request_sent' | 'request_received' | 'none';
+
 export function ProfilePage() {
   const { handle } = useParams();
   const currentUser = getStoredUser();
@@ -47,13 +49,19 @@ export function ProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [friendCount, setFriendCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Friendship state
+  const [friendshipStatus, setFriendshipStatus] = useState<FriendshipStatus>('none');
   
   // Follow lists dialog
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [friends, setFriends] = useState<FollowUser[]>([]);
 
   const isOwnProfile = currentUser?.id === user?.id;
 
@@ -77,18 +85,30 @@ export function ProfilePage() {
         );
         setPosts(postsData.items || []);
 
-        // Load follow counts
-        const [followersData, followingData] = await Promise.all([
+        // Load follow and friend counts
+        const [followersData, followingData, friendsData] = await Promise.all([
           apiCall<{ users: FollowUser[] }>(`/api/users/${profileUser.id}/followers`),
           apiCall<{ users: FollowUser[] }>(`/api/users/${profileUser.id}/following`),
+          apiCall<{ users: FollowUser[] }>(`/api/users/${profileUser.id}/friends`),
         ]);
         setFollowerCount(followersData.users?.length || 0);
         setFollowingCount(followingData.users?.length || 0);
+        setFriendCount(friendsData.users?.length || 0);
 
         // Check if current user follows this user
         if (currentUser && currentUser.id !== profileUser.id) {
           const isFollowingUser = followersData.users?.some(f => f.id === currentUser.id);
           setIsFollowing(isFollowingUser || false);
+          
+          // Check friendship status
+          try {
+            const statusData = await apiCall<{ status: FriendshipStatus }>(
+              `/api/friends/status/${profileUser.id}`
+            );
+            setFriendshipStatus(statusData.status);
+          } catch {
+            setFriendshipStatus('none');
+          }
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -136,6 +156,51 @@ export function ProfilePage() {
     }
   }
 
+  async function handleFriendAction() {
+    if (!user || !token || isProcessing) return;
+    setIsProcessing(true);
+    
+    try {
+      switch (friendshipStatus) {
+        case 'none':
+          // Send friend request
+          await apiCall(`/api/friends/request`, {
+            method: "POST",
+            body: JSON.stringify({ target_id: user.id }),
+          });
+          setFriendshipStatus('request_sent');
+          break;
+        
+        case 'request_received':
+          // Accept friend request
+          await apiCall(`/api/friends/accept`, {
+            method: "POST",
+            body: JSON.stringify({ from_id: user.id }),
+          });
+          setFriendshipStatus('friends');
+          setFriendCount(prev => prev + 1);
+          break;
+        
+        case 'friends':
+          // Remove friend
+          await apiCall(`/api/friends/${user.id}`, {
+            method: "DELETE",
+          });
+          setFriendshipStatus('none');
+          setFriendCount(prev => prev - 1);
+          break;
+        
+        case 'request_sent':
+          // Cancel request (not implemented yet, just show message)
+          break;
+      }
+    } catch (err) {
+      console.error("Failed friend action:", err);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   async function loadFollowers() {
     if (!user) return;
     const data = await apiCall<{ users: FollowUser[] }>(`/api/users/${user.id}/followers`);
@@ -148,6 +213,50 @@ export function ProfilePage() {
     const data = await apiCall<{ users: FollowUser[] }>(`/api/users/${user.id}/following`);
     setFollowing(data.users || []);
     setShowFollowing(true);
+  }
+
+  async function loadFriends() {
+    if (!user) return;
+    const data = await apiCall<{ users: FollowUser[] }>(`/api/users/${user.id}/friends`);
+    setFriends(data.users || []);
+    setShowFriends(true);
+  }
+
+  function getFriendButtonContent() {
+    if (isProcessing) {
+      return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+    
+    switch (friendshipStatus) {
+      case 'friends':
+        return (
+          <>
+            <UserCheck className="h-4 w-4 mr-2" />
+            Friends
+          </>
+        );
+      case 'request_sent':
+        return (
+          <>
+            <Clock className="h-4 w-4 mr-2" />
+            Pending
+          </>
+        );
+      case 'request_received':
+        return (
+          <>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Accept Request
+          </>
+        );
+      default:
+        return (
+          <>
+            <Users className="h-4 w-4 mr-2" />
+            Add Friend
+          </>
+        );
+    }
   }
 
   const initials = user?.profile?.name
@@ -192,29 +301,41 @@ export function ProfilePage() {
                 <AvatarFallback className="text-2xl bg-primary/10">{initials}</AvatarFallback>
               </Avatar>
               
-              <div className="mt-2">
+              <div className="mt-2 flex gap-2">
                 {isOwnProfile ? (
                   <Button variant="outline">Edit Profile</Button>
                 ) : token ? (
-                  <Button
-                    variant={isFollowing ? "outline" : "default"}
-                    onClick={handleFollow}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : isFollowing ? (
-                      <>
-                        <UserMinus className="h-4 w-4 mr-2" />
-                        Unfollow
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
+                  <>
+                    {/* Follow Button */}
+                    <Button
+                      variant={isFollowing ? "outline" : "default"}
+                      onClick={handleFollow}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : isFollowing ? (
+                        <>
+                          <UserMinus className="h-4 w-4 mr-2" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                    
+                    {/* Friend Button */}
+                    <Button
+                      variant={friendshipStatus === 'friends' ? "outline" : friendshipStatus === 'request_received' ? "default" : "secondary"}
+                      onClick={handleFriendAction}
+                      disabled={isProcessing || friendshipStatus === 'request_sent'}
+                    >
+                      {getFriendButtonContent()}
+                    </Button>
+                  </>
                 ) : (
                   <Link to="/login">
                     <Button>Follow</Button>
@@ -256,7 +377,7 @@ export function ProfilePage() {
                 </span>
               </div>
 
-              {/* Follow Stats */}
+              {/* Follow & Friend Stats */}
               <div className="flex gap-4 mt-3">
                 <button 
                   onClick={loadFollowing}
@@ -271,6 +392,13 @@ export function ProfilePage() {
                 >
                   <span className="font-bold">{followerCount}</span>
                   <span className="text-muted-foreground ml-1">Followers</span>
+                </button>
+                <button 
+                  onClick={loadFriends}
+                  className="hover:underline"
+                >
+                  <span className="font-bold">{friendCount}</span>
+                  <span className="text-muted-foreground ml-1">Friends</span>
                 </button>
               </div>
             </div>
@@ -370,6 +498,37 @@ export function ProfilePage() {
                   key={f.id}
                   to={`/profile/${f.handle}`}
                   onClick={() => setShowFollowing(false)}
+                  className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg"
+                >
+                  <Avatar>
+                    <AvatarFallback>{(f.profile?.name || f.handle)[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{f.profile?.name || f.handle}</p>
+                    <p className="text-sm text-muted-foreground">@{f.handle}</p>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Friends Dialog */}
+      <Dialog open={showFriends} onOpenChange={setShowFriends}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Friends</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto">
+            {friends.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No friends yet</p>
+            ) : (
+              friends.map(f => (
+                <Link
+                  key={f.id}
+                  to={`/profile/${f.handle}`}
+                  onClick={() => setShowFriends(false)}
                   className="flex items-center gap-3 p-3 hover:bg-muted rounded-lg"
                 >
                   <Avatar>
