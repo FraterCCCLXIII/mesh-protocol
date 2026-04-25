@@ -8,14 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostCard } from '@/components/PostCard';
+import { ComposeBox } from '@/components/ComposeBox';
 import { 
-  Users, Settings, Shield, UserPlus, UserMinus, 
-  Crown, Ban, AlertTriangle, Check, X, Loader2,
+  Users, Shield, UserPlus, UserMinus, 
+  Crown, Ban, AlertTriangle, Loader2,
   Hash
 } from 'lucide-react';
 
@@ -34,7 +35,7 @@ interface Member {
   handle: string;
   profile: { name?: string };
   role: 'owner' | 'admin' | 'moderator' | 'member';
-  joined_at: string;
+  joined_at?: string;
 }
 
 interface BannedUser {
@@ -71,18 +72,19 @@ export default function GroupDetail() {
   useEffect(() => {
     if (groupId) {
       loadGroup();
-      loadMembers();
       loadPosts();
     }
-  }, [groupId]);
+  }, [groupId, token]);
 
   async function loadGroup() {
+    if (!groupId) return;
     try {
       const resp = await fetch(`${API_URL}/groups/${groupId}${token ? `?token=${token}` : ''}`);
       if (resp.ok) {
         const data = await resp.json();
         setGroup(data);
         setIsMember(data.is_member || false);
+        setMembers(data.members || []);
       }
     } catch (err) {
       console.error('Failed to load group:', err);
@@ -91,21 +93,11 @@ export default function GroupDetail() {
     }
   }
 
-  async function loadMembers() {
-    try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/members${token ? `?token=${token}` : ''}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setMembers(data.members || []);
-      }
-    } catch (err) {
-      console.error('Failed to load members:', err);
-    }
-  }
-
   async function loadPosts() {
+    if (!groupId) return;
+    const qs = token ? `?token=${encodeURIComponent(token)}` : '';
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/content${token ? `?token=${token}` : ''}`);
+      const resp = await fetch(`${API_URL}/groups/${groupId}/content${qs}`);
       if (resp.ok) {
         const data = await resp.json();
         setPosts(data.items || []);
@@ -136,8 +128,8 @@ export default function GroupDetail() {
       });
       if (resp.ok) {
         setIsMember(true);
-        loadGroup();
-        loadMembers();
+        await loadGroup();
+        loadPosts();
       }
     } catch (err) {
       console.error('Failed to join group:', err);
@@ -154,8 +146,8 @@ export default function GroupDetail() {
       });
       if (resp.ok) {
         setIsMember(false);
-        loadGroup();
-        loadMembers();
+        await loadGroup();
+        loadPosts();
       }
     } catch (err) {
       console.error('Failed to leave group:', err);
@@ -173,7 +165,7 @@ export default function GroupDetail() {
         body: JSON.stringify({ user_id: memberId, role }),
       });
       if (resp.ok) {
-        loadMembers();
+        loadGroup();
       }
     } catch (err) {
       console.error('Failed to promote member:', err);
@@ -189,7 +181,7 @@ export default function GroupDetail() {
         method: 'DELETE',
       });
       if (resp.ok) {
-        loadMembers();
+        loadGroup();
       }
     } catch (err) {
       console.error('Failed to demote member:', err);
@@ -207,8 +199,7 @@ export default function GroupDetail() {
         body: JSON.stringify({ user_id: memberId }),
       });
       if (resp.ok) {
-        loadMembers();
-        loadGroup();
+        await loadGroup();
       }
     } catch (err) {
       console.error('Failed to kick member:', err);
@@ -230,7 +221,6 @@ export default function GroupDetail() {
         setShowBanDialog(false);
         setBanTarget(null);
         setBanReason('');
-        loadMembers();
         loadGroup();
         loadBannedUsers();
       }
@@ -336,12 +326,20 @@ export default function GroupDetail() {
 
         {/* Posts Tab */}
         <TabsContent value="posts">
+          {isMember && groupId && (
+            <ComposeBox groupId={groupId} onPostCreated={loadPosts} />
+          )}
+          {!isMember && (
+            <div className="p-4 text-center text-sm text-muted-foreground border-b">
+              Join this group to post in the feed.
+            </div>
+          )}
           {posts.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               No posts yet. Be the first to post!
             </div>
           ) : (
-            posts.map(post => <PostCard key={post.id} post={post} />)
+            posts.map((post) => <PostCard key={post.id} post={post} onLike={loadPosts} />)
           )}
         </TabsContent>
 

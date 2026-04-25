@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pencil, Loader2, Upload, Camera } from 'lucide-react';
+import { Pencil, Loader2, Camera } from 'lucide-react';
 
 const API_URL = '/api';
 

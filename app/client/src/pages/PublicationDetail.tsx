@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Users, PenLine, Check } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Sidebar } from "../components/Sidebar";
 import { apiCall, getStoredUser } from "../lib/mesh";
 
 interface Publication {
@@ -94,8 +93,6 @@ export function PublicationDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-
         <main className="flex-1 border-x border-border min-h-screen">
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
             <div className="flex items-center gap-4 p-4">
@@ -186,3 +183,5 @@ export function PublicationDetailPage() {
     </div>
   );
 }
+
+export default PublicationDetailPage;

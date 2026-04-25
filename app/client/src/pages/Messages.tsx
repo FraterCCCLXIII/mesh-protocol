@@ -35,18 +35,17 @@ interface Message {
 const API_URL = '/api';
 
 export default function Messages() {
-  const { oderId } = useParams();
-  const conversationId = oderId;
+  const { participantId } = useParams<{ participantId: string }>();
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(conversationId || null);
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(participantId || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setConversationsLoading] = useState(true);
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchUsers, setSearchUsers] = useState<any[]>([]);
 
@@ -57,10 +56,16 @@ export default function Messages() {
   }, [token]);
 
   useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation);
+    if (participantId) {
+      setSelectedConversation(participantId);
     }
-  }, [selectedConversation]);
+  }, [participantId]);
+
+  useEffect(() => {
+    if (selectedConversation && token) {
+      void loadMessages(selectedConversation);
+    }
+  }, [selectedConversation, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,13 +81,15 @@ export default function Messages() {
     } catch (err) {
       console.error('Failed to load conversations:', err);
     } finally {
-      setIsLoading(false);
+      setConversationsLoading(false);
     }
   }
 
-  async function loadMessages(oderId: string) {
+  async function loadMessages(peerId: string) {
     try {
-      const resp = await fetch(`${API_URL}/messages/${conversationId}?token=${token}`);
+      const resp = await fetch(
+        `${API_URL}/messages/${encodeURIComponent(peerId)}?token=${encodeURIComponent(token!)}`,
+      );
       if (resp.ok) {
         const data = await resp.json();
         setMessages(data.messages || []);
@@ -109,16 +116,18 @@ export default function Messages() {
     setNewMessage('');
 
     try {
-      const resp = await fetch(`${API_URL}/messages`, {
+      const resp = await fetch(
+        `${API_URL}/messages?token=${encodeURIComponent(token!)}`,
+        {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
           recipient_id: selectedConversation,
           content: newMessage,
           encrypted: true,
         }),
-      });
+        },
+      );
 
       if (resp.ok) {
         const data = await resp.json();

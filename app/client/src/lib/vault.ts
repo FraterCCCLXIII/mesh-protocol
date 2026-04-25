@@ -191,7 +191,8 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array
   const bits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
-      salt: salt,
+      // Ensure concrete ArrayBuffer for TS DOM typings (avoids ArrayBufferLike mismatch).
+      salt: new Uint8Array(salt),
       iterations: 100000,
       hash: 'SHA-256',
     },
@@ -245,17 +246,6 @@ async function decryptWithPassword(
   }
 
   return decrypted;
-}
-
-/**
- * Generate entity ID from public key
- */
-function generateEntityId(publicKey: Uint8Array): string {
-  const hash = nacl.hash(publicKey);
-  const hex = Array.from(hash.slice(0, 16))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return `ent:${hex}`;
 }
 
 // ========== Error ==========

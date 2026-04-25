@@ -3,9 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Heart, MessageCircle, Repeat2, Share } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Sidebar } from "../components/Sidebar";
 import { ComposeBox } from "../components/ComposeBox";
-import { apiCall, getPost } from "../lib/mesh";
+import { apiCall, getPost, type Post as ApiPost } from "../lib/mesh";
 
 interface Post {
   id: string;
@@ -31,13 +30,24 @@ export function PostDetailPage() {
     setLoading(true);
     try {
       const postData = await getPost(id);
-      setPost(postData);
+      const bodyNorm =
+        typeof postData.body === "string" ? { text: postData.body } : postData.body;
+      setPost({
+        ...postData,
+        body: bodyNorm,
+        reply_to: postData.reply_to ?? undefined,
+      });
 
       // Load replies
-      const repliesData = await apiCall<{ items: Post[] }>(
+      const repliesData = await apiCall<{ items: ApiPost[] }>(
         `/api/content?reply_to=${id}&limit=50`
       );
-      setReplies(repliesData.items || []);
+      setReplies(
+        (repliesData.items || []).map((r) => ({
+          ...r,
+          body: typeof r.body === "string" ? { text: r.body } : r.body,
+        })) as Post[]
+      );
     } catch (err) {
       console.error("Failed to load post:", err);
     } finally {
@@ -85,8 +95,6 @@ export function PostDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-
         <main className="flex-1 border-x border-border min-h-screen">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
@@ -199,3 +207,5 @@ export function PostDetailPage() {
     </div>
   );
 }
+
+export default PostDetailPage;

@@ -4,7 +4,7 @@ import { ArrowLeft, Lock, Calendar, Clock } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { apiCall, getStoredUser } from "../lib/mesh";
+import { apiCall } from "../lib/mesh";
 
 interface Article {
   id: string;
@@ -28,7 +28,6 @@ interface Publication {
 
 export function ArticlePage() {
   const { id } = useParams();
-  const user = getStoredUser();
   const [article, setArticle] = useState<Article | null>(null);
   const [publication, setPublication] = useState<Publication | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,3 +169,5 @@ export function ArticlePage() {
     </div>
   );
 }
+
+export default ArticlePage;

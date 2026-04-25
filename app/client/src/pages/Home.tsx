@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
+import { Navigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Sidebar } from "../components/Sidebar";
 import { ComposeBox } from "../components/ComposeBox";
 import { PostCard } from "../components/PostCard";
-import { AuthPage } from "../components/AuthPage";
 import { getStoredUser, apiCall } from "../lib/mesh";
+import { useAuth } from "../contexts/AuthContext";
 
 interface Post {
   id: string;
@@ -21,6 +21,7 @@ interface Post {
 }
 
 export function HomePage() {
+  const { isAuthenticated, isLoading } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(getStoredUser());
@@ -38,22 +39,33 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    setUser(getStoredUser());
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     if (user) {
       loadPosts();
     }
   }, [user, loadPosts]);
 
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">Loading...</div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (!user) {
-    return <AuthPage onAuth={() => setUser(getStoredUser())} />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-        
         <main className="flex-1 border-x border-border min-h-screen">
-          {/* Header */}
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
             <div className="flex items-center justify-between p-4">
               <h1 className="text-xl font-bold">Home</h1>
@@ -63,14 +75,10 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Compose */}
           <ComposeBox onPostCreated={loadPosts} />
 
-          {/* Posts */}
           {loading ? (
-            <div className="p-8 text-center text-muted-foreground">
-              Loading...
-            </div>
+            <div className="p-8 text-center text-muted-foreground">Loading...</div>
           ) : posts.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <p>No posts yet</p>
@@ -83,23 +91,23 @@ export function HomePage() {
               ))}
             </div>
           )}
-        </main>
 
-        {/* Right Sidebar */}
-        <aside className="w-80 p-4 hidden lg:block">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">About MESH</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p>
-                A decentralized social protocol with self-sovereign identity,
-                end-to-end encryption, and verifiable feeds.
-              </p>
-            </CardContent>
-          </Card>
-        </aside>
+          <div className="p-4 border-t">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Node stats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Connected to MESH protocol relay
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
       </div>
     </div>
   );
 }
+
+export default HomePage;

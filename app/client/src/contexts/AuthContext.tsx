@@ -6,15 +6,18 @@
  * 2. Login: Fetches encrypted keys from vault, decrypts client-side
  * 3. Keys are NEVER sent unencrypted to vault
  */
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { VaultClient, VaultKeys } from '@/lib/vault';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { getIdentityMode } from '@/config/identityMode';
+import { clearLocalIdentityStorage } from '@/lib/localIdentity';
+import { fetchRelayToken } from '@/lib/relayAuth';
+import { VaultClient, type VaultKeys } from '@/lib/vault';
 
 interface User {
   id: string;           // Vault user ID
   email: string;
   entityId: string;     // MESH entity ID
   handle?: string;
-  profile?: { name?: string; bio?: string; avatar?: string };
+  profile?: { name?: string; bio?: string; avatar?: string; location?: string; website?: string };
 }
 
 interface AuthContextType {
@@ -99,9 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(err.detail || 'Entity creation failed');
       }
       const entity = await entityResp.json();
-      
-      // 4. Get relay token
-      const relayToken = await authenticateWithRelay(vaultKeys, entity.id);
+
+      // 4. Get relay session token (Ed25519 challenge/response, same as `lib/relayAuth.ts`)
+      const relayToken = await fetchRelayToken(vaultKeys.signingKeyPair.secretKey, entity.id);
       
       // 5. Save session
       const userData: User = {
@@ -152,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const vaultKeys = await vault.getKeys(identity.entityId, password);
       
       // 4. Authenticate with relay
-      const relayToken = await authenticateWithRelay(vaultKeys, identity.entityId);
+      const relayToken = await fetchRelayToken(vaultKeys.signingKeyPair.secretKey, identity.entityId);
       
       // 5. Fetch user profile from relay
       const entityResp = await fetch(`${API_URL}/entities/${identity.entityId}?token=${relayToken}`);
@@ -182,6 +185,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(ENTITY_KEY);
+    if (getIdentityMode() === 'local') {
+      clearLocalIdentityStorage();
+    }
     setToken(null);
     setVaultToken(null);
     setUser(null);
@@ -215,55 +221,13 @@ export function useAuth() {
 // ========== Helpers ==========
 
 function saveSession(vaultToken: string, relayToken: string, user: User) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ 
-    vaultToken, 
-    relayToken, 
-    user 
-  }));
-  localStorage.setItem(ENTITY_KEY, user.entityId);
-}
-
-/**
- * Authenticate with MESH relay using cryptographic keys
- */
-async function authenticateWithRelay(keys: VaultKeys, entityId: string): Promise<string> {
-  // Get challenge
-  const challengeResp = await fetch(`${API_URL}/auth/challenge`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entity_id: entityId }),
-  });
-  
-  if (!challengeResp.ok) {
-    throw new Error('Failed to get auth challenge');
-  }
-  
-  const { challenge } = await challengeResp.json();
-  
-  // Sign challenge with private key
-  const encoder = new TextEncoder();
-  const messageBytes = encoder.encode(challenge);
-  
-  // Use tweetnacl to sign
-  const nacl = await import('tweetnacl');
-  const signature = nacl.sign.detached(messageBytes, keys.signingKeyPair.secretKey);
-  const signatureHex = Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('');
-  
-  // Verify with relay
-  const verifyResp = await fetch(`${API_URL}/auth/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      entity_id: entityId, 
-      challenge, 
-      signature: signatureHex 
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      vaultToken,
+      relayToken,
+      user,
     }),
-  });
-  
-  if (!verifyResp.ok) {
-    throw new Error('Authentication failed');
-  }
-  
-  const { token } = await verifyResp.json();
-  return token;
+  );
+  localStorage.setItem(ENTITY_KEY, user.entityId);
 }

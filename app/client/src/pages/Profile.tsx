@@ -71,9 +71,19 @@ export function ProfilePage() {
       try {
         let profileUser: User;
         if (handle) {
-          profileUser = await getUserByHandle(handle);
+          const u = await getUserByHandle(handle);
+          profileUser = {
+            ...u,
+            handle: u.handle ?? '',
+            created_at: u.created_at ?? '',
+          };
         } else if (currentUser) {
-          profileUser = currentUser as User;
+          profileUser = {
+            id: currentUser.id,
+            handle: currentUser.handle ?? '',
+            created_at: new Date().toISOString(),
+            profile: (currentUser.profile || {}) as User['profile'],
+          };
         } else {
           return;
         }

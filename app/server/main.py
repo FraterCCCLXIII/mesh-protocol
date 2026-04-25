@@ -14,7 +14,6 @@ import json
 import os
 import secrets
 import sys
-import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
 from contextlib import asynccontextmanager
@@ -28,30 +27,15 @@ from pydantic import BaseModel, Field
 import uvicorn
 import aiosqlite
 
-# ========== Crypto functions (inline to avoid import issues) ==========
-
-def canonical_json(obj: dict) -> bytes:
-    return json.dumps(obj, sort_keys=True, separators=(',', ':')).encode('utf-8')
-
-def sha256_hex(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-def generate_entity_id(public_key: bytes) -> str:
-    return f"ent:{sha256_hex(public_key)[:32]}"
-
-def generate_content_id(content_dict: dict) -> str:
-    return sha256_hex(canonical_json(content_dict))[:48]
-
-def generate_link_id(source: str, kind: str, target: str) -> str:
-    return sha256_hex(f"{source}:{kind}:{target}".encode())[:32]
-
-def generate_log_event_id(actor: str, seq: int) -> str:
-    return sha256_hex(f"{actor}:{seq}".encode())[:48]
-
-def verify_signature(public_key: bytes, message: bytes, signature: bytes) -> bool:
-    # Simplified verification - in production use proper Ed25519
-    # For now, we accept any signature as valid for demo purposes
-    return len(signature) >= 32
+from relay_crypto import (
+    canonical_json,
+    generate_content_id,
+    generate_entity_id,
+    generate_link_id,
+    generate_log_event_id,
+    sha256_hex,
+    verify_signature,
+)
 
 # ========== Data types ==========
 
@@ -133,9 +117,10 @@ class Content:
     encrypted: bool
     encryption_metadata: Optional[dict]
     sig: bytes
-    
+    group_id: Optional[str] = None
+
     def to_dict(self) -> dict:
-        return {
+        d: dict = {
             "id": self.id,
             "author": self.author,
             "kind": self.kind.value,
@@ -147,6 +132,9 @@ class Content:
             "encryption_metadata": self.encryption_metadata,
             "sig": self.sig.hex(),
         }
+        if self.group_id:
+            d["group_id"] = self.group_id
+        return d
 
 @dataclass  
 class Link:
@@ -326,7 +314,20 @@ class Storage:
             CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
         """)
         await self.db.commit()
-    
+        # Add group_id to content (migration for existing DBs)
+        try:
+            await self.db.execute("ALTER TABLE content ADD COLUMN group_id TEXT")
+            await self.db.commit()
+        except Exception:
+            pass
+        try:
+            await self.db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_content_group_id ON content(group_id)"
+            )
+            await self.db.commit()
+        except Exception:
+            pass
+
     async def close(self):
         if self.db:
             await self.db.close()
@@ -362,15 +363,16 @@ class Storage:
     
     async def create_content(self, content: Content):
         await self.db.execute("""
-            INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig, group_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             content.id, content.author, content.kind.value,
             json.dumps(content.body), content.reply_to,
             content.created_at.isoformat(), content.access.value,
             1 if content.encrypted else 0,
             json.dumps(content.encryption_metadata) if content.encryption_metadata else None,
-            content.sig
+            content.sig,
+            content.group_id,
         ))
         await self.db.commit()
     
@@ -388,6 +390,8 @@ class Storage:
             except json.JSONDecodeError:
                 pass  # Keep as string
         
+        gid = None
+        gid = row['group_id'] if 'group_id' in row.keys() else None
         return Content(
             id=row['id'],
             author=row['author'],
@@ -399,6 +403,7 @@ class Storage:
             encrypted=bool(row['encrypted']),
             encryption_metadata=json.loads(row['encryption_metadata']) if row['encryption_metadata'] else None,
             sig=row['sig'],
+            group_id=gid,
         )
     
     async def create_link(self, link: Link):
@@ -693,6 +698,20 @@ def require_auth(token: str = Query(..., alias="token")) -> str:
     return entity_id
 
 
+async def is_group_member(group_id: str, user_id: str) -> bool:
+    """True if user has an active membership link to the group."""
+    if storage is None:
+        return False
+    cursor = await storage.db.execute(
+        """
+        SELECT 1 FROM links
+        WHERE source = ? AND target = ? AND kind = 'member' AND tombstone = 0
+        """,
+        (user_id, group_id),
+    )
+    return await cursor.fetchone() is not None
+
+
 # Well-known endpoints
 @app.get("/.well-known/mesh-node")
 async def well_known_mesh_node():
@@ -878,35 +897,64 @@ async def update_entity(entity_id: str, profile: dict, current_user: str = Depen
 @app.post("/api/content")
 async def create_content(req: ContentCreate, current_user: str = Depends(require_auth)):
     """Create new content (post, reply, etc.)."""
+    if isinstance(req.body, str):
+        body_dict: dict = {"text": req.body}
+    else:
+        body_dict = req.body
+
+    # Determine access and group (replies inherit parent's group)
+    access = AccessType.PUBLIC
+    group_id_val: Optional[str] = None
+
+    if req.group_id:
+        entity = await storage.get_entity(req.group_id)
+        if not entity or entity.kind != EntityKind.GROUP:
+            raise HTTPException(status_code=400, detail="Invalid group_id")
+        if not await is_group_member(req.group_id, current_user):
+            raise HTTPException(status_code=403, detail="Must be a group member to post here")
+        access = AccessType.GROUP
+        group_id_val = req.group_id
+    elif req.reply_to:
+        parent = await storage.get_content(req.reply_to)
+        if parent and parent.group_id:
+            if not await is_group_member(parent.group_id, current_user):
+                raise HTTPException(status_code=403, detail="Must be a group member to reply in this group")
+            access = AccessType.GROUP
+            group_id_val = parent.group_id
+    elif req.access == "group":
+        raise HTTPException(status_code=400, detail="group_id is required for group posts")
+
+    if not group_id_val:
+        if req.access == "private":
+            access = AccessType.PRIVATE
+        else:
+            access = AccessType.PUBLIC
+
     content_dict = {
         "author": current_user,
         "kind": req.kind,
-        "body": req.body,
+        "body": body_dict,
         "reply_to": req.reply_to,
         "created_at": datetime.utcnow().isoformat(),
     }
+    if group_id_val:
+        content_dict["group_id"] = group_id_val
     content_id = generate_content_id(content_dict)
-    
-    # Determine access
-    access = AccessType.PUBLIC
-    if req.access == "private":
-        access = AccessType.PRIVATE
-    elif req.access == "group":
-        access = AccessType.GROUP
-    
+
     content = Content(
         id=content_id,
         author=current_user,
         kind=ContentKind(req.kind),
-        body=req.body,
+        body=body_dict,
         reply_to=req.reply_to,
         created_at=datetime.utcnow(),
         access=access,
         encrypted=False,
         encryption_metadata=None,
         sig=b"",
+        group_id=group_id_val,
     )
-    
+
     await storage.create_content(content)
     
     # Create log event
@@ -1595,7 +1643,7 @@ async def list_groups(access: str = "public", limit: int = 50):
 
 
 @app.get("/api/groups/{group_id}")
-async def get_group(group_id: str):
+async def get_group(group_id: str, token: str = Query(None)):
     """Get group details."""
     entity = await storage.get_entity(group_id)
     if not entity or entity.kind != EntityKind.GROUP:
@@ -1620,12 +1668,77 @@ async def get_group(group_id: str):
                 "role": data.get("role", "member"),
             })
     
+    user_id = get_current_user(token) if token else None
+    is_member = bool(user_id and await is_group_member(group_id, user_id))
+    p = entity.profile or {}
+
     return {
         "id": entity.id,
-        "profile": entity.profile,
+        "name": p.get("name"),
+        "description": p.get("description", ""),
+        "owner": p.get("owner"),
+        "access": p.get("access", "public"),
+        "created_at": entity.created_at.isoformat(),
+        "profile": p,
         "members": members,
         "member_count": len(members),
+        "is_member": is_member,
     }
+
+
+@app.get("/api/groups/{group_id}/content")
+async def list_group_content(
+    group_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    token: str = Query(None),
+):
+    """Feed of top-level posts in a group (newest first)."""
+    entity = await storage.get_entity(group_id)
+    if not entity or entity.kind != EntityKind.GROUP:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    profile = entity.profile or {}
+    is_private = profile.get("access") == "private"
+    user_id = get_current_user(token) if token else None
+    if is_private and (not user_id or not await is_group_member(group_id, user_id)):
+        raise HTTPException(status_code=403, detail="This group's feed is only visible to members")
+
+    cursor = await storage.db.execute(
+        """
+        SELECT id FROM content
+        WHERE group_id = ? AND tombstone = 0 AND reply_to IS NULL
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+        """,
+        (group_id, limit, offset),
+    )
+    rows = await cursor.fetchall()
+    results: list = []
+    for row in rows:
+        c = await storage.get_content(row["id"])
+        if not c:
+            continue
+        item = c.to_dict()
+        author_entity = await storage.get_entity(c.author)
+        if author_entity:
+            item["author_handle"] = author_entity.handle
+            item["author_profile"] = author_entity.profile
+        cur2 = await storage.db.execute(
+            "SELECT COUNT(*) as cnt FROM links WHERE target = ? AND kind = 'like' AND tombstone = 0",
+            (c.id,),
+        )
+        r2 = await cur2.fetchone()
+        item["like_count"] = r2["cnt"] if r2 else 0
+        cur2 = await storage.db.execute(
+            "SELECT COUNT(*) as cnt FROM content WHERE reply_to = ?",
+            (c.id,),
+        )
+        r2 = await cur2.fetchone()
+        item["reply_count"] = r2["cnt"] if r2 else 0
+        results.append(item)
+
+    return {"items": results, "total": len(results)}
 
 
 @app.post("/api/groups/{group_id}/join")

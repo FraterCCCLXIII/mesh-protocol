@@ -163,3 +163,5 @@ export function WritePage() {
     </div>
   );
 }
+
+export default WritePage;

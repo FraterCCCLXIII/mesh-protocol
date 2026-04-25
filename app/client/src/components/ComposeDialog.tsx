@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
-import { createPost, getStoredUser } from "../lib/mesh";
+import { createPost } from "../lib/mesh";
 
 interface ComposeDialogProps {
   open: boolean;
@@ -11,7 +11,6 @@ interface ComposeDialogProps {
 export function ComposeDialog({ open, onOpenChange }: ComposeDialogProps) {
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
-  const user = getStoredUser();
 
   if (!open) return null;
 

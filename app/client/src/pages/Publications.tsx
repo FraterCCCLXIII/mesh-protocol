@@ -4,7 +4,6 @@ import { Plus, Users, FileText } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Sidebar } from "../components/Sidebar";
 import { apiCall, getStoredUser } from "../lib/mesh";
 
 interface Publication {
@@ -49,8 +48,6 @@ export function PublicationsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-
         <main className="flex-1 border-x border-border min-h-screen">
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
             <div className="flex items-center justify-between p-4">
@@ -134,3 +131,5 @@ export function PublicationsPage() {
     </div>
   );
 }
+
+export default PublicationsPage;

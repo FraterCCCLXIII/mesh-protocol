@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Plus, Users, Lock, Globe } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Sidebar } from "../components/Sidebar";
-import { apiCall, getStoredToken } from "../lib/mesh";
+import { apiCall } from "../lib/mesh";
 
 interface Group {
   id: string;
   name: string;
   description?: string;
   profile?: { description?: string };
-  privacy: string;
+  access?: string;
+  /** legacy */
+  privacy?: string;
   member_count: number;
   created_at: string;
 }
@@ -76,8 +78,6 @@ export function GroupsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-
         <main className="flex-1 border-x border-border min-h-screen">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
@@ -128,18 +128,24 @@ export function GroupsPage() {
           ) : (
             <div className="divide-y">
               {groups.map((group) => (
-                <div key={group.id} className="p-4 hover:bg-muted/30 transition">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12">
+                <div
+                  key={group.id}
+                  className="flex items-stretch gap-0 hover:bg-muted/30 transition"
+                >
+                  <Link
+                    to={`/groups/${group.id}`}
+                    className="flex flex-1 items-start gap-3 p-4 min-w-0 text-left"
+                  >
+                    <Avatar className="w-12 h-12 shrink-0">
                       <AvatarFallback>{getInitials(group.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{group.name}</h3>
-                        {group.privacy === "private" ? (
-                          <Lock className="w-4 h-4 text-muted-foreground" />
+                        {(group.access ?? group.privacy) === "private" ? (
+                          <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
                         ) : (
-                          <Globe className="w-4 h-4 text-muted-foreground" />
+                          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
@@ -149,9 +155,13 @@ export function GroupsPage() {
                         {group.member_count || 0} members
                       </p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Join
-                    </Button>
+                  </Link>
+                  <div className="flex items-center p-4 pl-0">
+                    <Link to={`/groups/${group.id}`}>
+                      <Button variant="outline" size="sm" type="button">
+                        View
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -176,3 +186,5 @@ export function GroupsPage() {
     </div>
   );
 }
+
+export default GroupsPage;

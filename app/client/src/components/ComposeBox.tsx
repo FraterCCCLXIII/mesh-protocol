@@ -8,11 +8,13 @@ type PostAccess = "public" | "friends" | "private";
 
 interface ComposeBoxProps {
   replyTo?: string;
+  /** When set, post is created as group content (access group + group_id). */
+  groupId?: string;
   onPostCreated?: () => void;
   placeholder?: string;
 }
 
-export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happening?" }: ComposeBoxProps) {
+export function ComposeBox({ replyTo, onPostCreated, groupId, placeholder = "What's happening?" }: ComposeBoxProps) {
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
   const [access, setAccess] = useState<PostAccess>("public");
@@ -25,12 +27,23 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
     .toUpperCase()
     .slice(0, 2) || "?";
 
+  const defaultPlaceholder = groupId
+    ? "Share something with the group..."
+    : "What's happening?";
+  const showPrivacy = !groupId;
+
   const handleSubmit = async () => {
     if (!text.trim() || posting) return;
     
     setPosting(true);
     try {
-      await createPost(text, replyTo, access);
+      await createPost(
+        text,
+        replyTo,
+        groupId ? "group" : access,
+        [],
+        groupId,
+      );
       setText("");
       setAccess("public");
       onPostCreated?.();
@@ -62,7 +75,7 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={placeholder}
+            placeholder={placeholder || defaultPlaceholder}
             className="w-full resize-none border-0 focus:ring-0 focus:outline-none text-lg placeholder:text-muted-foreground bg-transparent min-h-[80px]"
             maxLength={280}
           />
@@ -75,9 +88,10 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
                 <Smile className="w-5 h-5" />
               </Button>
               
-              {/* Privacy Selector */}
+              {showPrivacy && (
               <div className="relative group">
                 <button 
+                  type="button"
                   className="flex items-center gap-1 px-2 py-1 rounded text-sm text-primary hover:bg-primary/10 transition"
                 >
                   <AccessIcon className="w-4 h-4" />
@@ -88,6 +102,7 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
                     const Icon = option.icon;
                     return (
                       <button
+                        type="button"
                         key={option.value}
                         onClick={() => setAccess(option.value)}
                         className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition first:rounded-t-lg last:rounded-b-lg ${
@@ -101,6 +116,7 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
                   })}
                 </div>
               </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-sm ${text.length > 260 ? "text-destructive" : "text-muted-foreground"}`}>

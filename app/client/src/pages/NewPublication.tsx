@@ -4,7 +4,6 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { Sidebar } from "../components/Sidebar";
 import { apiCall } from "../lib/mesh";
 
 export function NewPublicationPage() {
@@ -44,8 +43,6 @@ export function NewPublicationPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto flex">
-        <Sidebar />
-
         <main className="flex-1 border-x border-border min-h-screen">
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
             <div className="flex items-center gap-4 p-4">
@@ -128,3 +125,5 @@ export function NewPublicationPage() {
     </div>
   );
 }
+
+export default NewPublicationPage;

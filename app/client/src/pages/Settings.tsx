@@ -20,12 +20,12 @@ import {
 const API_URL = '/api';
 
 export default function Settings() {
-  const { user, token, logout } = useAuth();
+  const { user, token } = useAuth();
   
   // Profile settings
   const [name, setName] = useState(user?.profile?.name || '');
   const [bio, setBio] = useState(user?.profile?.bio || '');
-  const [avatar, setAvatar] = useState(user?.profile?.avatar || '');
+  const [avatar] = useState(user?.profile?.avatar || '');
   
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -59,8 +59,8 @@ export default function Settings() {
     try {
       const resp = await fetch(`${API_URL}/settings?token=${token}`);
       if (resp.ok) {
-        const data = await resp.json();
-        // Apply settings...
+        void (await resp.json());
+        // Apply settings when server model is defined
       }
     } catch (err) {
       console.error('Failed to load settings:', err);

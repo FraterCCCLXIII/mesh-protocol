@@ -13,11 +13,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
-import { CreateGroupDialog } from './CreateGroupDialog';
 import { 
   Home, Search, Bell, Mail, Users, BookOpen, 
   Settings, LogOut, User, PenSquare, Menu, X,
-  Plus
+  Plus, UserPlus
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -49,6 +48,7 @@ export default function Layout() {
 
   const authNavItems = [
     { path: '/notifications', icon: Bell, label: 'Notifications' },
+    { path: '/friend-requests', icon: UserPlus, label: 'Friend requests' },
     { path: '/messages', icon: Mail, label: 'Messages' },
   ];
 

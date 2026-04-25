@@ -21,7 +21,7 @@ interface CreateGroupDialogProps {
 
 export function CreateGroupDialog({ trigger, onCreated }: CreateGroupDialogProps) {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

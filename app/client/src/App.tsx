@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy, Component, ReactNode, ErrorInfo } from 'react';
+import { Suspense, lazy, Component, type ReactNode, type ErrorInfo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 
@@ -47,6 +47,7 @@ const MessagesPage = lazy(() => import('./pages/Messages'));
 const NotificationsPage = lazy(() => import('./pages/Notifications'));
 const SearchPage = lazy(() => import('./pages/Search'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
+const FriendRequestsPage = lazy(() => import('./pages/FriendRequests'));
 const LoginPage = lazy(() => import('./pages/Login'));
 
 function Loading() {
@@ -93,8 +94,9 @@ function AppRoutes() {
         
         {/* Protected routes */}
         <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-        <Route path="/messages/:oderId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+        <Route path="/messages/:participantId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+        <Route path="/friend-requests" element={<ProtectedRoute><FriendRequestsPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/publications/new" element={<ProtectedRoute><NewPublicationPage /></ProtectedRoute>} />
         <Route path="/write" element={<ProtectedRoute><WritePage /></ProtectedRoute>} />
