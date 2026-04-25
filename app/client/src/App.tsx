@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, Component, ReactNode, ErrorInfo } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Layout from './components/Layout';
 
 // Error boundary for catching component errors
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -31,15 +33,21 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 // Lazy load pages
-const HomePage = lazy(() => import('./pages/Home').then(m => ({ default: m.HomePage })));
-const ProfilePage = lazy(() => import('./pages/Profile').then(m => ({ default: m.ProfilePage })));
-const GroupsPage = lazy(() => import('./pages/Groups').then(m => ({ default: m.GroupsPage })));
-const PublicationsPage = lazy(() => import('./pages/Publications').then(m => ({ default: m.PublicationsPage })));
-const NewPublicationPage = lazy(() => import('./pages/NewPublication').then(m => ({ default: m.NewPublicationPage })));
-const PublicationDetailPage = lazy(() => import('./pages/PublicationDetail').then(m => ({ default: m.PublicationDetailPage })));
-const WritePage = lazy(() => import('./pages/Write').then(m => ({ default: m.WritePage })));
-const ArticlePage = lazy(() => import('./pages/Article').then(m => ({ default: m.ArticlePage })));
-const PostDetailPage = lazy(() => import('./pages/PostDetail').then(m => ({ default: m.PostDetailPage })));
+const HomePage = lazy(() => import('./pages/Home'));
+const ProfilePage = lazy(() => import('./pages/Profile'));
+const GroupsPage = lazy(() => import('./pages/Groups'));
+const GroupDetailPage = lazy(() => import('./pages/GroupDetail'));
+const PublicationsPage = lazy(() => import('./pages/Publications'));
+const NewPublicationPage = lazy(() => import('./pages/NewPublication'));
+const PublicationDetailPage = lazy(() => import('./pages/PublicationDetail'));
+const WritePage = lazy(() => import('./pages/Write'));
+const ArticlePage = lazy(() => import('./pages/Article'));
+const PostDetailPage = lazy(() => import('./pages/PostDetail'));
+const MessagesPage = lazy(() => import('./pages/Messages'));
+const NotificationsPage = lazy(() => import('./pages/Notifications'));
+const SearchPage = lazy(() => import('./pages/Search'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+const LoginPage = lazy(() => import('./pages/Login'));
 
 function Loading() {
   return (
@@ -49,24 +57,61 @@ function Loading() {
   );
 }
 
+// Protected route wrapper
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <Loading />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<LoginPage />} />
+      
+      {/* Routes with Layout */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:handle" element={<ProfilePage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/:groupId" element={<GroupDetailPage />} />
+        <Route path="/publications" element={<PublicationsPage />} />
+        <Route path="/publications/:id" element={<PublicationDetailPage />} />
+        <Route path="/article/:id" element={<ArticlePage />} />
+        <Route path="/post/:id" element={<PostDetailPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        
+        {/* Protected routes */}
+        <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+        <Route path="/messages/:oderId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/publications/new" element={<ProtectedRoute><NewPublicationPage /></ProtectedRoute>} />
+        <Route path="/write" element={<ProtectedRoute><WritePage /></ProtectedRoute>} />
+      </Route>
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/:handle" element={<ProfilePage />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/publications" element={<PublicationsPage />} />
-            <Route path="/publications/new" element={<NewPublicationPage />} />
-            <Route path="/publications/:id" element={<PublicationDetailPage />} />
-            <Route path="/write" element={<WritePage />} />
-            <Route path="/article/:id" element={<ArticlePage />} />
-            <Route path="/post/:id" element={<PostDetailPage />} />
-          </Routes>
-        </Suspense>
+        <AuthProvider>
+          <Suspense fallback={<Loading />}>
+            <AppRoutes />
+          </Suspense>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

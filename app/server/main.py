@@ -3022,6 +3022,168 @@ async def get_stats():
     }
 
 
+# ========== Direct Messages ==========
+
+@app.get("/api/messages/conversations")
+async def get_conversations(current_user: str = Depends(require_auth)):
+    """Get list of conversations for the current user."""
+    # Get all DM content where user is sender or recipient
+    cursor = await storage.db.execute("""
+        SELECT DISTINCT 
+            CASE 
+                WHEN author = ? THEN json_extract(body, '$.recipient')
+                ELSE author 
+            END as participant_id,
+            MAX(created_at) as last_message_at
+        FROM content 
+        WHERE kind = 'dm' AND (author = ? OR json_extract(body, '$.recipient') = ?)
+        GROUP BY participant_id
+        ORDER BY last_message_at DESC
+    """, (current_user, current_user, current_user))
+    rows = await cursor.fetchall()
+    
+    conversations = []
+    for row in rows:
+        participant_id = row['participant_id']
+        if not participant_id:
+            continue
+            
+        participant = await storage.get_entity(participant_id)
+        if not participant:
+            continue
+        
+        # Get last message
+        msg_cursor = await storage.db.execute("""
+            SELECT body FROM content 
+            WHERE kind = 'dm' AND (
+                (author = ? AND json_extract(body, '$.recipient') = ?) OR
+                (author = ? AND json_extract(body, '$.recipient') = ?)
+            )
+            ORDER BY created_at DESC LIMIT 1
+        """, (current_user, participant_id, participant_id, current_user))
+        msg_row = await msg_cursor.fetchone()
+        last_message = ""
+        if msg_row:
+            try:
+                body = json.loads(msg_row['body']) if isinstance(msg_row['body'], str) else msg_row['body']
+                last_message = body.get('text', '')[:50]
+            except:
+                pass
+        
+        conversations.append({
+            "id": f"{current_user}:{participant_id}",
+            "participantId": participant_id,
+            "participantHandle": participant.handle,
+            "participantName": participant.profile.get('name', participant.handle),
+            "lastMessage": last_message,
+            "lastMessageAt": row['last_message_at'],
+            "unreadCount": 0,  # TODO: track read status
+        })
+    
+    return {"conversations": conversations}
+
+
+@app.get("/api/messages/{participant_id}")
+async def get_messages(participant_id: str, current_user: str = Depends(require_auth), limit: int = 50):
+    """Get messages in a conversation."""
+    cursor = await storage.db.execute("""
+        SELECT * FROM content 
+        WHERE kind = 'dm' AND (
+            (author = ? AND json_extract(body, '$.recipient') = ?) OR
+            (author = ? AND json_extract(body, '$.recipient') = ?)
+        )
+        ORDER BY created_at DESC LIMIT ?
+    """, (current_user, participant_id, participant_id, current_user, limit))
+    rows = await cursor.fetchall()
+    
+    messages = []
+    for row in rows:
+        try:
+            body = json.loads(row['body']) if isinstance(row['body'], str) else row['body']
+            messages.append({
+                "id": row['id'],
+                "senderId": row['author'],
+                "content": body.get('text', ''),
+                "timestamp": row['created_at'],
+                "encrypted": bool(row['encrypted']),
+                "status": "read",
+            })
+        except:
+            pass
+    
+    messages.reverse()  # Oldest first
+    return {"messages": messages}
+
+
+@app.post("/api/messages")
+async def send_message(req: dict, current_user: str = Depends(require_auth)):
+    """Send a direct message."""
+    recipient_id = req.get("recipient_id")
+    content_text = req.get("content", "")
+    encrypted = req.get("encrypted", False)
+    
+    if not recipient_id or not content_text:
+        raise HTTPException(status_code=400, detail="recipient_id and content required")
+    
+    # Check recipient exists
+    recipient = await storage.get_entity(recipient_id)
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+    
+    # Create DM content
+    content_id = secrets.token_hex(24)
+    now = datetime.utcnow()
+    
+    body = json.dumps({
+        "text": content_text,
+        "recipient": recipient_id,
+    })
+    
+    await storage.db.execute("""
+        INSERT INTO content (id, author, kind, body, created_at, access, encrypted, tombstone, sig)
+        VALUES (?, ?, 'dm', ?, ?, 'private', ?, 0, ?)
+    """, (content_id, current_user, body, now.isoformat(), 1 if encrypted else 0, b""))
+    await storage.db.commit()
+    
+    return {"id": content_id, "status": "sent"}
+
+
+@app.post("/api/notifications/read-all")
+async def mark_notifications_read(current_user: str = Depends(require_auth)):
+    """Mark all notifications as read."""
+    # For now just return success - in production, track read status
+    return {"status": "ok"}
+
+
+# ========== Search & Trending ==========
+
+@app.get("/api/trending")
+async def get_trending():
+    """Get trending topics."""
+    # Simple implementation - count hashtags in recent posts
+    cursor = await storage.db.execute("""
+        SELECT body FROM content 
+        WHERE kind = 'post' AND access = 'public' AND tombstone = 0
+        AND created_at > datetime('now', '-7 days')
+        ORDER BY created_at DESC LIMIT 500
+    """)
+    rows = await cursor.fetchall()
+    
+    import re
+    hashtag_counts = {}
+    for row in rows:
+        body = row['body'] if isinstance(row['body'], str) else str(row['body'])
+        hashtags = re.findall(r'#(\w+)', body)
+        for tag in hashtags:
+            tag_lower = tag.lower()
+            hashtag_counts[tag_lower] = hashtag_counts.get(tag_lower, 0) + 1
+    
+    # Sort by count
+    trending = sorted(hashtag_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    return {"topics": [f"#{tag}" for tag, _ in trending]}
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
