@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostCard } from '@/components/PostCard';
 import { AppPageShell } from '@/components/AppPageShell';
+import { ComposeBox } from '@/components/ComposeBox';
+import { getPosts, getStoredToken, getStoredUser } from '@/lib/mesh';
 import { 
   Users, Settings, Shield, UserPlus, UserMinus, 
   Crown, Ban, AlertTriangle, Check, X, Loader2,
@@ -36,7 +38,7 @@ interface Member {
   handle: string;
   profile: { name?: string };
   role: 'owner' | 'admin' | 'moderator' | 'member';
-  joined_at: string;
+  joined_at?: string;
 }
 
 interface BannedUser {
@@ -51,7 +53,10 @@ const API_URL = '/api';
 export default function GroupDetail() {
   const { groupId } = useParams();
   const { user, token } = useAuth();
-  
+  /** Vault login and legacy mesh login use different storage; unify for API calls. */
+  const relayToken = token ?? getStoredToken();
+  const viewerEntityId = user?.entityId ?? getStoredUser()?.id ?? null;
+
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
@@ -66,25 +71,44 @@ export default function GroupDetail() {
   const [banReason, setBanReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const isOwner = group?.owner === user?.entityId;
-  const currentUserRole = members.find(m => m.id === user?.entityId)?.role;
+  const isOwner = group?.owner === viewerEntityId;
+  const currentUserRole = members.find(m => m.id === viewerEntityId)?.role;
   const isAdmin = isOwner || currentUserRole === 'admin' || currentUserRole === 'moderator';
 
   useEffect(() => {
-    if (groupId) {
-      loadGroup();
-      loadMembers();
-      loadPosts();
-    }
-  }, [groupId]);
+    if (!groupId) return;
+    void loadGroup();
+    void loadPosts();
+  }, [groupId, relayToken, viewerEntityId]);
 
   async function loadGroup() {
+    if (!groupId) return;
+    setIsLoading(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}${token ? `?token=${token}` : ''}`);
+      const qs = relayToken ? `?token=${encodeURIComponent(relayToken)}` : '';
+      const resp = await fetch(`${API_URL}/groups/${encodeURIComponent(groupId)}${qs}`);
       if (resp.ok) {
         const data = await resp.json();
-        setGroup(data);
-        setIsMember(data.is_member || false);
+        const profile = data.profile || {};
+        setGroup({
+          id: data.id,
+          name: data.name ?? profile.name ?? '',
+          description: data.description ?? profile.description ?? '',
+          owner: data.owner ?? profile.owner ?? '',
+          access: (data.access ?? profile.access ?? 'public') as 'public' | 'private',
+          member_count: data.member_count ?? 0,
+          created_at: data.created_at ?? profile.created_at ?? '',
+        });
+        setMembers(data.members || []);
+        setIsMember(
+          Boolean(
+            data.is_member ??
+              (viewerEntityId &&
+                (data.members || []).some((m: Member) => m.id === viewerEntityId)),
+          ),
+        );
+      } else {
+        setGroup(null);
       }
     } catch (err) {
       console.error('Failed to load group:', err);
@@ -93,34 +117,22 @@ export default function GroupDetail() {
     }
   }
 
-  async function loadMembers() {
-    try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/members${token ? `?token=${token}` : ''}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setMembers(data.members || []);
-      }
-    } catch (err) {
-      console.error('Failed to load members:', err);
-    }
-  }
-
   async function loadPosts() {
+    if (!groupId) return;
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/content${token ? `?token=${token}` : ''}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setPosts(data.items || []);
-      }
+      const data = await getPosts({ group_id: groupId, limit: 50 });
+      setPosts(data.items || []);
     } catch (err) {
       console.error('Failed to load posts:', err);
     }
   }
 
   async function loadBannedUsers() {
-    if (!isAdmin) return;
+    if (!isAdmin || !relayToken || !groupId) return;
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/bans?token=${token}`);
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId)}/bans?token=${encodeURIComponent(relayToken)}`,
+      );
       if (resp.ok) {
         const data = await resp.json();
         setBannedUsers(data.bans || []);
@@ -131,15 +143,19 @@ export default function GroupDetail() {
   }
 
   async function joinGroup() {
+    if (!relayToken) {
+      console.error('Join requires a signed-in session');
+      return;
+    }
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/join?token=${token}`, {
-        method: 'POST',
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/join?token=${encodeURIComponent(relayToken)}`,
+        { method: 'POST' },
+      );
       if (resp.ok) {
-        setIsMember(true);
-        loadGroup();
-        loadMembers();
+        await loadGroup();
+        await loadPosts();
       }
     } catch (err) {
       console.error('Failed to join group:', err);
@@ -149,15 +165,16 @@ export default function GroupDetail() {
   }
 
   async function leaveGroup() {
+    if (!relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/leave?token=${token}`, {
-        method: 'POST',
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/leave?token=${encodeURIComponent(relayToken)}`,
+        { method: 'POST' },
+      );
       if (resp.ok) {
-        setIsMember(false);
-        loadGroup();
-        loadMembers();
+        await loadGroup();
+        await loadPosts();
       }
     } catch (err) {
       console.error('Failed to leave group:', err);
@@ -167,15 +184,19 @@ export default function GroupDetail() {
   }
 
   async function promoteMember(memberId: string, role: 'admin' | 'moderator') {
+    if (!relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/admins?token=${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: memberId, role }),
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/admins?token=${encodeURIComponent(relayToken)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: memberId, role }),
+        },
+      );
       if (resp.ok) {
-        loadMembers();
+        await loadGroup();
       }
     } catch (err) {
       console.error('Failed to promote member:', err);
@@ -185,13 +206,15 @@ export default function GroupDetail() {
   }
 
   async function demoteMember(memberId: string) {
+    if (!relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/admins/${memberId}?token=${token}`, {
-        method: 'DELETE',
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/admins/${encodeURIComponent(memberId)}?token=${encodeURIComponent(relayToken)}`,
+        { method: 'DELETE' },
+      );
       if (resp.ok) {
-        loadMembers();
+        await loadGroup();
       }
     } catch (err) {
       console.error('Failed to demote member:', err);
@@ -201,16 +224,20 @@ export default function GroupDetail() {
   }
 
   async function kickMember(memberId: string) {
+    if (!relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/kick?token=${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: memberId }),
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/kick?token=${encodeURIComponent(relayToken)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: memberId }),
+        },
+      );
       if (resp.ok) {
-        loadMembers();
-        loadGroup();
+        await loadGroup();
+        await loadPosts();
       }
     } catch (err) {
       console.error('Failed to kick member:', err);
@@ -220,21 +247,24 @@ export default function GroupDetail() {
   }
 
   async function banMember() {
-    if (!banTarget) return;
+    if (!banTarget || !relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/ban?token=${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: banTarget.id, reason: banReason }),
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/ban?token=${encodeURIComponent(relayToken)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: banTarget.id, reason: banReason }),
+        },
+      );
       if (resp.ok) {
         setShowBanDialog(false);
         setBanTarget(null);
         setBanReason('');
-        loadMembers();
-        loadGroup();
-        loadBannedUsers();
+        await loadGroup();
+        await loadPosts();
+        await loadBannedUsers();
       }
     } catch (err) {
       console.error('Failed to ban member:', err);
@@ -244,13 +274,15 @@ export default function GroupDetail() {
   }
 
   async function unbanUser(userId: string) {
+    if (!relayToken) return;
     setIsProcessing(true);
     try {
-      const resp = await fetch(`${API_URL}/groups/${groupId}/ban/${userId}?token=${token}`, {
-        method: 'DELETE',
-      });
+      const resp = await fetch(
+        `${API_URL}/groups/${encodeURIComponent(groupId!)}/ban/${encodeURIComponent(userId)}?token=${encodeURIComponent(relayToken)}`,
+        { method: 'DELETE' },
+      );
       if (resp.ok) {
-        loadBannedUsers();
+        await loadBannedUsers();
       }
     } catch (err) {
       console.error('Failed to unban user:', err);
@@ -343,6 +375,15 @@ export default function GroupDetail() {
 
         {/* Posts Tab */}
         <TabsContent value="posts">
+          {isMember && groupId ? (
+            <ComposeBox
+              groupId={groupId}
+              placeholder={`Post to ${group.name}…`}
+              onPostCreated={() => {
+                void loadPosts();
+              }}
+            />
+          ) : null}
           {posts.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               No posts yet. Be the first to post!
@@ -376,7 +417,7 @@ export default function GroupDetail() {
                   </div>
                   <p className="text-sm text-muted-foreground">@{member.handle}</p>
                 </div>
-                {isAdmin && member.id !== user?.entityId && member.role !== 'owner' && (
+                {isAdmin && member.id !== viewerEntityId && member.role !== 'owner' && (
                   <div className="flex gap-2">
                     {isOwner && member.role === 'member' && (
                       <Button 

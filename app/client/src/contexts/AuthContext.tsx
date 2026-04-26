@@ -8,6 +8,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { VaultClient, type VaultKeys } from '@/lib/vault';
+import { invalidateClientAuth, MESH_AUTH_INVALID_EVENT } from '@/lib/mesh';
 
 interface User {
   id: string;           // Vault user ID
@@ -51,15 +52,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem(SESSION_KEY);
     if (saved) {
       try {
-        const session = JSON.parse(saved);
-        setToken(session.relayToken);
-        setVaultToken(session.vaultToken);
-        setUser(session.user);
-        setIsAuthenticated(true);
+        const session = JSON.parse(saved) as {
+          relayToken?: string;
+          vaultToken?: string;
+          relayExpiresAt?: string;
+          user?: User;
+        };
+        const exp = session.relayExpiresAt;
+        const expired =
+          typeof exp === 'string' &&
+          exp.length > 0 &&
+          !Number.isNaN(new Date(exp).getTime()) &&
+          new Date(exp).getTime() <= Date.now();
+        if (expired) {
+          localStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem(ENTITY_KEY);
+          localStorage.removeItem('mesh_token');
+          localStorage.removeItem('mesh_user');
+        } else if (session.relayToken && session.user) {
+          setToken(session.relayToken);
+          setVaultToken(session.vaultToken ?? null);
+          setUser(session.user);
+          setIsAuthenticated(true);
+          localStorage.removeItem('mesh_token');
+          localStorage.removeItem('mesh_user');
+        }
         // Note: Keys are not stored - user must re-enter password for sensitive operations
       } catch {}
     }
     setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const onRelayAuthInvalid = () => {
+      setToken(null);
+      setVaultToken(null);
+      setUser(null);
+      setKeys(null);
+      setIsAuthenticated(false);
+    };
+    window.addEventListener(MESH_AUTH_INVALID_EVENT, onRelayAuthInvalid);
+    return () => window.removeEventListener(MESH_AUTH_INVALID_EVENT, onRelayAuthInvalid);
   }, []);
 
   /**
@@ -101,8 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const entity = await entityResp.json();
       
       // 4. Get relay token
-      const relayToken = await authenticateWithRelay(vaultKeys, entity.id);
-      
+      const { token: relayToken, expires_at: relayExpiresAt } = await authenticateWithRelay(
+        vaultKeys,
+        entity.id,
+      );
+
       // 5. Save session
       const userData: User = {
         id: vault.getUserId() || '',
@@ -111,8 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         handle,
         profile: { name },
       };
-      
-      saveSession(vaultAccessToken, relayToken, userData);
+
+      saveSession(vaultAccessToken, relayToken, userData, relayExpiresAt);
       setVaultToken(vaultAccessToken);
       setToken(relayToken);
       setUser(userData);
@@ -152,8 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const vaultKeys = await vault.getKeys(identity.entityId, password);
       
       // 4. Authenticate with relay
-      const relayToken = await authenticateWithRelay(vaultKeys, identity.entityId);
-      
+      const { token: relayToken, expires_at: relayExpiresAt } = await authenticateWithRelay(
+        vaultKeys,
+        identity.entityId,
+      );
+
       // 5. Fetch user profile from relay
       const entityResp = await fetch(`${API_URL}/entities/${identity.entityId}?token=${relayToken}`);
       const entity = entityResp.ok ? await entityResp.json() : null;
@@ -167,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile: entity?.profile || { name: email.split('@')[0] },
       };
       
-      saveSession(vaultAccessToken, relayToken, userData);
+      saveSession(vaultAccessToken, relayToken, userData, relayExpiresAt);
       setVaultToken(vaultAccessToken);
       setToken(relayToken);
       setUser(userData);
@@ -180,8 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(ENTITY_KEY);
+    invalidateClientAuth();
     setToken(null);
     setVaultToken(null);
     setUser(null);
@@ -214,19 +252,33 @@ export function useAuth() {
 
 // ========== Helpers ==========
 
-function saveSession(vaultToken: string, relayToken: string, user: User) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ 
-    vaultToken, 
-    relayToken, 
-    user 
-  }));
+function saveSession(
+  vaultToken: string,
+  relayToken: string,
+  user: User,
+  relayExpiresAt: string,
+) {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      vaultToken,
+      relayToken,
+      relayExpiresAt,
+      user,
+    }),
+  );
   localStorage.setItem(ENTITY_KEY, user.entityId);
+  localStorage.removeItem('mesh_token');
+  localStorage.removeItem('mesh_user');
 }
 
 /**
  * Authenticate with MESH relay using cryptographic keys
  */
-async function authenticateWithRelay(keys: VaultKeys, entityId: string): Promise<string> {
+async function authenticateWithRelay(
+  keys: VaultKeys,
+  entityId: string,
+): Promise<{ token: string; expires_at: string }> {
   // Get challenge
   const challengeResp = await fetch(`${API_URL}/auth/challenge`, {
     method: 'POST',
@@ -264,6 +316,9 @@ async function authenticateWithRelay(keys: VaultKeys, entityId: string): Promise
     throw new Error('Authentication failed');
   }
   
-  const { token } = await verifyResp.json();
-  return token;
+  const data = (await verifyResp.json()) as { token: string; expires_at: string };
+  if (!data.token || !data.expires_at) {
+    throw new Error('Authentication failed: missing session fields');
+  }
+  return { token: data.token, expires_at: data.expires_at };
 }

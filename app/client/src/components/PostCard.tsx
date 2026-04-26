@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Repeat2, Share } from "lucide-react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
-import { apiCall, getStoredToken } from "../lib/mesh";
+import { apiCall, getStoredToken, postBodyText } from "../lib/mesh";
 
 interface Post {
   id: string;
@@ -97,7 +97,7 @@ export function PostCard({ post, onLike }: PostCardProps) {
               </div>
             ) : null}
             <p className="mt-1 whitespace-pre-wrap break-words">
-              {typeof post.body === 'string' ? post.body : post.body?.text}
+              {postBodyText(post.body)}
             </p>
             <div className="flex items-center gap-6 mt-3 -ml-2">
               <Button 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Plus, Users, Lock, Globe } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -128,18 +129,24 @@ export function GroupsPage() {
           ) : (
             <div className="divide-y">
               {groups.map((group) => (
-                <div key={group.id} className="p-4 hover:bg-muted/30 transition">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12">
+                <div
+                  key={group.id}
+                  className="p-4 hover:bg-muted/30 transition flex items-start gap-3"
+                >
+                  <Link
+                    to={`/groups/${group.id}`}
+                    className="flex flex-1 min-w-0 items-start gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    <Avatar className="w-12 h-12 shrink-0">
                       <AvatarFallback>{getInitials(group.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{group.name}</h3>
                         {group.privacy === "private" ? (
-                          <Lock className="w-4 h-4 text-muted-foreground" />
+                          <Lock className="w-4 h-4 shrink-0 text-muted-foreground" />
                         ) : (
-                          <Globe className="w-4 h-4 text-muted-foreground" />
+                          <Globe className="w-4 h-4 shrink-0 text-muted-foreground" />
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
@@ -149,10 +156,10 @@ export function GroupsPage() {
                         {group.member_count || 0} members
                       </p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Join
-                    </Button>
-                  </div>
+                  </Link>
+                  <Button variant="outline" size="sm" asChild className="shrink-0">
+                    <Link to={`/groups/${group.id}`}>View</Link>
+                  </Button>
                 </div>
               ))}
             </div>

@@ -5,14 +5,14 @@ import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Sidebar } from "../components/Sidebar";
 import { ComposeBox } from "../components/ComposeBox";
-import { apiCall, getPost } from "../lib/mesh";
+import { apiCall, getPost, postBodyText } from "../lib/mesh";
 
 interface Post {
   id: string;
   author: string;
   author_handle?: string;
   author_profile?: { name?: string };
-  body: { text?: string };
+  body: string | { text?: string };
   created_at: string;
   like_count: number;
   reply_count: number;
@@ -121,7 +121,7 @@ export function PostDetailPage() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-4 text-xl whitespace-pre-wrap">{post.body?.text}</p>
+                <p className="mt-4 text-xl whitespace-pre-wrap">{postBodyText(post.body)}</p>
                 <p className="mt-4 text-sm text-muted-foreground">
                   {formatTime(post.created_at)}
                 </p>
@@ -183,7 +183,9 @@ export function PostDetailPage() {
                               @{reply.author_handle || reply.author?.slice(4, 12)}
                             </span>
                           </div>
-                          <p className="mt-1 whitespace-pre-wrap">{reply.body?.text}</p>
+                          <p className="mt-1 whitespace-pre-wrap">
+                            {postBodyText(reply.body)}
+                          </p>
                         </div>
                       </div>
                     </article>

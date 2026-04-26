@@ -8,11 +8,18 @@ type PostAccess = "public" | "friends" | "private";
 
 interface ComposeBoxProps {
   replyTo?: string;
-  onPostCreated?: () => void;
+  /** When set, post is created as group-scoped content for this group id. */
+  groupId?: string;
+  onPostCreated?: () => void | Promise<void>;
   placeholder?: string;
 }
 
-export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happening?" }: ComposeBoxProps) {
+export function ComposeBox({
+  replyTo,
+  groupId,
+  onPostCreated,
+  placeholder = "What's happening?",
+}: ComposeBoxProps) {
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
   const [access, setAccess] = useState<PostAccess>("public");
@@ -30,10 +37,10 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
     
     setPosting(true);
     try {
-      await createPost(text, replyTo, access);
+      await createPost(text, replyTo, access, [], groupId);
       setText("");
       setAccess("public");
-      onPostCreated?.();
+      await onPostCreated?.();
     } catch (err) {
       console.error("Failed to post:", err);
     } finally {
@@ -75,32 +82,40 @@ export function ComposeBox({ replyTo, onPostCreated, placeholder = "What's happe
                 <Smile className="w-5 h-5" />
               </Button>
               
-              {/* Privacy Selector */}
-              <div className="relative group">
-                <button 
-                  className="flex items-center gap-1 px-2 py-1 rounded text-sm text-primary hover:bg-primary/10 transition"
-                >
-                  <AccessIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{selectedAccess.label}</span>
-                </button>
-                <div className="absolute left-0 top-full mt-1 bg-background border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
-                  {accessOptions.map(option => {
-                    const Icon = option.icon;
-                    return (
-                      <button
-                        key={option.value}
-                        onClick={() => setAccess(option.value)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition first:rounded-t-lg last:rounded-b-lg ${
-                          access === option.value ? 'bg-primary/10 text-primary' : ''
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {option.label}
-                      </button>
-                    );
-                  })}
+              {/* Privacy Selector (hidden for group posts — visibility is the group) */}
+              {!groupId ? (
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 px-2 py-1 rounded text-sm text-primary hover:bg-primary/10 transition"
+                  >
+                    <AccessIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{selectedAccess.label}</span>
+                  </button>
+                  <div className="absolute left-0 top-full mt-1 bg-background border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
+                    {accessOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setAccess(option.value)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition first:rounded-t-lg last:rounded-b-lg ${
+                            access === option.value ? 'bg-primary/10 text-primary' : ''
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <span className="text-xs text-muted-foreground px-2 py-1 rounded border border-border">
+                  Group post
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-sm ${text.length > 260 ? "text-destructive" : "text-muted-foreground"}`}>

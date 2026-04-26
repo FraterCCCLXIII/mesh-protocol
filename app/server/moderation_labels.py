@@ -46,7 +46,11 @@ async def fetch_labels_for_subjects(
                 if r.status_code != 200:
                     out[sid] = []
                     continue
-                data = r.json()
+                try:
+                    data = r.json()
+                except (ValueError, TypeError):
+                    out[sid] = []
+                    continue
                 labels = data.get("labels") or []
                 kept: List[dict] = []
                 for a in labels:
@@ -75,7 +79,7 @@ async def fetch_labels_for_subjects(
                         }
                     )
                 out[sid] = kept
-            except (OSError, httpx.RequestError) as e:
+            except Exception as e:
                 out[sid] = []
                 if os.environ.get("MESH_MODERATION_DEBUG"):
                     import sys

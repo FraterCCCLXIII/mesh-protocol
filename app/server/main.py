@@ -21,7 +21,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Response
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -144,7 +144,8 @@ class Content:
     encrypted: bool
     encryption_metadata: Optional[dict]
     sig: bytes
-    
+    group_id: Optional[str] = None
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -157,6 +158,7 @@ class Content:
             "encrypted": self.encrypted,
             "encryption_metadata": self.encryption_metadata,
             "sig": self.sig.hex(),
+            "group_id": self.group_id,
         }
 
 @dataclass  
@@ -210,6 +212,44 @@ class LogEvent:
             "sig": self.sig.hex(),
             "commitment": self.commitment,
         }
+
+
+def _store_content_body(body) -> str:
+    """
+    String posts must be stored as plain text. Using json.dumps(str) in SQLite stored a JSON
+    string literal (visible quote characters) when the client read the value back as text.
+    Dict (and other non-str) bodies are JSON-encoded.
+    """
+    if isinstance(body, str):
+        return body
+    return json.dumps(body)
+
+
+def _parse_stored_content_body(raw: Optional[str]):
+    """
+    - Object bodies: column starts with '{' and is JSON.
+    - Plain text: returned as stored (new format).
+    - Legacy: cell was json.dumps(plain string); decode only when round-trip matches that encoding.
+    """
+    if raw is None:
+        return None
+    s: str = raw
+    if not s:
+        return s
+    if s.startswith("{"):
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            return s
+    if s[0] == '"':
+        try:
+            val = json.loads(s)
+        except json.JSONDecodeError:
+            return s
+        if isinstance(val, str) and json.dumps(val, ensure_ascii=True) == s:
+            return val
+    return s
+
 
 # ========== Inline Storage class ==========
 
@@ -335,7 +375,29 @@ class Storage:
             CREATE INDEX IF NOT EXISTS idx_subscriptions_publication ON subscriptions(publication_id);
             CREATE INDEX IF NOT EXISTS idx_articles_publication ON articles(publication_id);
             CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
+
+            -- Auth sessions (survive process restarts; in-memory dict removed)
+            CREATE TABLE IF NOT EXISTS auth_sessions (
+                token TEXT PRIMARY KEY,
+                entity_id TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_auth_sessions_entity ON auth_sessions(entity_id);
+            CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires ON auth_sessions(expires_at);
         """)
+        await self.db.commit()
+        await self._ensure_content_group_id_column()
+
+    async def _ensure_content_group_id_column(self) -> None:
+        cursor = await self.db.execute("PRAGMA table_info(content)")
+        cols = {row[1] for row in await cursor.fetchall()}
+        if "group_id" not in cols:
+            await self.db.execute("ALTER TABLE content ADD COLUMN group_id TEXT")
+            await self.db.commit()
+        await self.db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_content_group_id ON content(group_id)"
+        )
         await self.db.commit()
     
     async def close(self):
@@ -373,15 +435,16 @@ class Storage:
     
     async def create_content(self, content: Content):
         await self.db.execute("""
-            INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO content (id, author, kind, body, reply_to, created_at, access, encrypted, encryption_metadata, sig, group_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             content.id, content.author, content.kind.value,
-            json.dumps(content.body), content.reply_to,
+            _store_content_body(content.body), content.reply_to,
             content.created_at.isoformat(), content.access.value,
             1 if content.encrypted else 0,
             json.dumps(content.encryption_metadata) if content.encryption_metadata else None,
-            content.sig
+            content.sig,
+            content.group_id,
         ))
         await self.db.commit()
     
@@ -391,14 +454,8 @@ class Storage:
         if not row:
             return None
         
-        # Handle body - could be JSON object or plain string
-        body = row['body']
-        if body and body.startswith('{'):
-            try:
-                body = json.loads(body)
-            except json.JSONDecodeError:
-                pass  # Keep as string
-        
+        body = _parse_stored_content_body(row["body"])
+
         return Content(
             id=row['id'],
             author=row['author'],
@@ -410,6 +467,7 @@ class Storage:
             encrypted=bool(row['encrypted']),
             encryption_metadata=json.loads(row['encryption_metadata']) if row['encryption_metadata'] else None,
             sig=row['sig'],
+            group_id=row['group_id'] if row['group_id'] else None,
         )
     
     async def create_link(self, link: Link):
@@ -558,6 +616,48 @@ class Storage:
             metrics[f"{table}_count"] = row['cnt']
         return metrics
 
+    async def delete_expired_auth_sessions(self) -> None:
+        now = datetime.utcnow().isoformat()
+        await self.db.execute("DELETE FROM auth_sessions WHERE expires_at < ?", (now,))
+        await self.db.commit()
+
+    async def create_auth_session(
+        self, token: str, entity_id: str, expires_at: datetime
+    ) -> None:
+        await self.delete_expired_auth_sessions()
+        now = datetime.utcnow().isoformat()
+        await self.db.execute(
+            """
+            INSERT INTO auth_sessions (token, entity_id, expires_at, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (token, entity_id, expires_at.isoformat(), now),
+        )
+        await self.db.commit()
+
+    async def resolve_auth_session(self, token: str) -> Optional[str]:
+        """Return entity_id if token exists and is not expired; else None."""
+        if not token:
+            return None
+        now = datetime.utcnow().isoformat()
+        cursor = await self.db.execute(
+            "SELECT entity_id, expires_at FROM auth_sessions WHERE token = ?",
+            (token,),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        if row["expires_at"] < now:
+            await self.db.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
+            await self.db.commit()
+            return None
+        return row["entity_id"]
+
+    async def delete_auth_session(self, token: str) -> None:
+        await self.db.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
+        await self.db.commit()
+
+
 # Configuration
 NODE_ID = os.environ.get("MESH_NODE_ID", "node1")
 NODE_URL = os.environ.get("MESH_NODE_URL", "http://localhost:12000")
@@ -566,7 +666,6 @@ DB_PATH = os.environ.get("MESH_DB_PATH", f"mesh_{NODE_ID}.db")
 # Global state
 storage: Optional[Storage] = None
 challenges: dict[str, dict] = {}  # entity_id -> {challenge, expires}
-sessions: dict[str, str] = {}  # token -> entity_id
 websocket_connections: dict[str, list[WebSocket]] = {}  # entity_id -> [ws]
 known_nodes: dict[str, dict] = {}  # node_url -> {node_id, last_seen}
 
@@ -688,17 +787,19 @@ app.add_middleware(
 )
 
 
-# Authentication helpers
-def get_current_user(token: str = Query(None, alias="token")) -> Optional[str]:
+# Authentication helpers (sessions persisted in SQLite — see Storage.auth_sessions)
+async def get_current_user(token: str = Query(None, alias="token")) -> Optional[str]:
     """Get current user from token."""
-    if not token:
+    if not token or not storage:
         return None
-    return sessions.get(token)
+    return await storage.resolve_auth_session(token)
 
 
-def require_auth(token: str = Query(..., alias="token")) -> str:
+async def require_auth(token: str = Query(..., alias="token")) -> str:
     """Require authentication."""
-    entity_id = sessions.get(token)
+    if not storage:
+        raise HTTPException(status_code=503, detail="Server not ready")
+    entity_id = await storage.resolve_auth_session(token)
     if not entity_id:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return entity_id
@@ -758,16 +859,25 @@ async def auth_verify(req: AuthVerifyRequest):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Signature verification failed: {e}")
     
-    # Create session
+    # Create session (persisted so restarts do not invalidate browser tokens)
     del challenges[req.entity_id]
     token = secrets.token_hex(32)
     expires = datetime.utcnow() + timedelta(days=7)
-    sessions[token] = req.entity_id
-    
+    await storage.create_auth_session(token, req.entity_id, expires)
+
     return AuthVerifyResponse(
         token=token,
         expires_at=expires.isoformat(),
     )
+
+
+@app.post("/api/auth/logout")
+async def auth_logout(request: Request, _entity_id: str = Depends(require_auth)):
+    """Invalidate the current session (server-side). Client should also clear local storage."""
+    token = request.query_params.get("token")
+    if storage and token:
+        await storage.delete_auth_session(token)
+    return {"status": "logged_out"}
 
 
 # Entity endpoints
@@ -897,14 +1007,25 @@ async def create_content(req: ContentCreate, current_user: str = Depends(require
         "created_at": datetime.utcnow().isoformat(),
     }
     content_id = generate_content_id(content_dict)
-    
-    # Determine access
+
     access = AccessType.PUBLIC
     if req.access == "private":
         access = AccessType.PRIVATE
     elif req.access == "group":
         access = AccessType.GROUP
-    
+
+    group_id: Optional[str] = None
+    if access == AccessType.GROUP:
+        group_id = req.group_id
+        if not group_id:
+            raise HTTPException(status_code=400, detail="group_id required for group posts")
+        if not await user_is_group_member(group_id, current_user):
+            raise HTTPException(status_code=403, detail="Must be a group member to post here")
+        if await user_is_banned_from_group(group_id, current_user):
+            raise HTTPException(status_code=403, detail="Banned from this group")
+    elif req.group_id:
+        raise HTTPException(status_code=400, detail="group_id is only valid when access is group")
+
     content = Content(
         id=content_id,
         author=current_user,
@@ -916,6 +1037,7 @@ async def create_content(req: ContentCreate, current_user: str = Depends(require
         encrypted=False,
         encryption_metadata=None,
         sig=b"",
+        group_id=group_id,
     )
     
     await storage.create_content(content)
@@ -986,20 +1108,31 @@ async def list_content(
     offset: int = 0,
 ):
     """List content with filters."""
-    query = "SELECT * FROM content WHERE access = 'public'"
-    params = []
-    
-    if author:
-        query += " AND author = ?"
-        params.append(author)
-    
-    if reply_to:
-        query += " AND reply_to = ?"
-        params.append(reply_to)
-    elif reply_to is None and not author:
-        # Default: top-level posts only
-        query += " AND reply_to IS NULL"
-    
+    params: list = []
+
+    if group_id:
+        query = "SELECT * FROM content WHERE group_id = ? AND access = 'group' AND tombstone = 0"
+        params.append(group_id)
+        if author:
+            query += " AND author = ?"
+            params.append(author)
+        if reply_to:
+            query += " AND reply_to = ?"
+            params.append(reply_to)
+        elif reply_to is None and not author:
+            query += " AND reply_to IS NULL"
+    else:
+        query = "SELECT * FROM content WHERE access = 'public' AND tombstone = 0"
+        if author:
+            query += " AND author = ?"
+            params.append(author)
+
+        if reply_to:
+            query += " AND reply_to = ?"
+            params.append(reply_to)
+        elif reply_to is None and not author:
+            query += " AND reply_to IS NULL"
+
     query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
     
@@ -1502,7 +1635,9 @@ async def get_feed(
         LIMIT ? OFFSET ?
     """
 
-    params = following + (friends if friends else []) + [entity_id, elimit, eoff]
+    # Two `author IN (following)` clauses each need a full `following` bind tuple.
+    friends_params = list(friends) if friends else []
+    params = following + following + friends_params + [entity_id, elimit, eoff]
     cursor = await storage.db.execute(query, params)
     rows = await cursor.fetchall()
 
@@ -1547,15 +1682,20 @@ async def get_feed(
     labels_status = "ok"
     allow = parse_issuer_allowlist()
     if include_labels:
-        if not allow or not moderation_base_url():
-            labels_status = "disabled"
+        try:
+            if not allow or not moderation_base_url():
+                labels_status = "disabled"
+                for it in results:
+                    it["moderation_labels"] = []
+            else:
+                ids = [it["id"] for it in results]
+                label_map = await fetch_labels_for_subjects(ids, allow)
+                for it in results:
+                    it["moderation_labels"] = label_map.get(it["id"], [])
+        except Exception:
+            labels_status = "error"
             for it in results:
                 it["moderation_labels"] = []
-        else:
-            ids = [it["id"] for it in results]
-            label_map = await fetch_labels_for_subjects(ids, allow)
-            for it in results:
-                it["moderation_labels"] = label_map.get(it["id"], [])
     else:
         labels_status = "off"
         for it in results:
@@ -1654,36 +1794,48 @@ async def list_groups(access: str = "public", limit: int = 50):
 
 
 @app.get("/api/groups/{group_id}")
-async def get_group(group_id: str):
-    """Get group details."""
+async def get_group(group_id: str, current_user: Optional[str] = Depends(get_current_user)):
+    """Get group details (flat fields + members; optional token sets is_member)."""
     entity = await storage.get_entity(group_id)
     if not entity or entity.kind != EntityKind.GROUP:
         raise HTTPException(status_code=404, detail="Group not found")
-    
-    # Get members
+
+    profile = entity.profile or {}
+
     cursor = await storage.db.execute(
-        "SELECT source, data FROM links WHERE target = ? AND kind = 'member' AND tombstone = 0",
-        (group_id,)
+        "SELECT source, data, created_at FROM links WHERE target = ? AND kind = 'member' AND tombstone = 0",
+        (group_id,),
     )
     rows = await cursor.fetchall()
-    
+
     members = []
     for row in rows:
-        member = await storage.get_entity(row['source'])
+        member = await storage.get_entity(row["source"])
         if member:
-            data = json.loads(row['data']) if row['data'] else {}
+            data = json.loads(row["data"]) if row["data"] else {}
             members.append({
                 "id": member.id,
                 "handle": member.handle,
                 "profile": member.profile,
                 "role": data.get("role", "member"),
+                "joined_at": row["created_at"],
             })
-    
+
+    is_member = bool(
+        current_user and any(m["id"] == current_user for m in members)
+    )
+
     return {
         "id": entity.id,
-        "profile": entity.profile,
+        "name": profile.get("name"),
+        "description": profile.get("description"),
+        "owner": profile.get("owner"),
+        "access": profile.get("access", "public"),
+        "created_at": profile.get("created_at") or entity.created_at.isoformat(),
+        "profile": profile,
         "members": members,
         "member_count": len(members),
+        "is_member": is_member,
     }
 
 
@@ -1732,6 +1884,23 @@ async def leave_group(group_id: str, current_user: str = Depends(require_auth)):
     await storage.db.commit()
     
     return {"status": "left"}
+
+
+async def user_is_group_member(group_id: str, user_id: str) -> bool:
+    cursor = await storage.db.execute(
+        "SELECT 1 FROM links WHERE source = ? AND target = ? AND kind = 'member' AND tombstone = 0",
+        (user_id, group_id),
+    )
+    return await cursor.fetchone() is not None
+
+
+async def user_is_banned_from_group(group_id: str, user_id: str) -> bool:
+    ban_link_id = generate_link_id(group_id, "ban", user_id)
+    cursor = await storage.db.execute(
+        "SELECT 1 FROM links WHERE id = ? AND tombstone = 0",
+        (ban_link_id,),
+    )
+    return await cursor.fetchone() is not None
 
 
 # ========== Group Admin & Moderation ==========
@@ -2164,7 +2333,7 @@ async def list_articles(
     publication_id: Optional[str] = None,
     status: str = "published",
     limit: int = 50,
-    current_user: str = Depends(get_current_user)
+    current_user: Optional[str] = Depends(get_current_user),
 ):
     """List articles."""
     query = "SELECT * FROM articles WHERE 1=1"
@@ -2220,7 +2389,9 @@ async def list_articles(
 
 
 @app.get("/api/articles/{article_id}")
-async def get_article(article_id: str, current_user: str = Depends(get_current_user)):
+async def get_article(
+    article_id: str, current_user: Optional[str] = Depends(get_current_user)
+):
     """Get an article by ID."""
     cursor = await storage.db.execute("SELECT * FROM articles WHERE id = ?", (article_id,))
     row = await cursor.fetchone()
@@ -3290,8 +3461,10 @@ async def federation_get_relays():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
     await websocket.accept()
-    
-    entity_id = sessions.get(token) if token else None
+
+    entity_id = None
+    if token and storage:
+        entity_id = await storage.resolve_auth_session(token)
     
     if entity_id:
         if entity_id not in websocket_connections:

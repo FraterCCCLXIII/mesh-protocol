@@ -3,8 +3,22 @@
  * Handles key management, authentication, and API calls
  */
 
-// Use relative URLs when proxied, or explicit URL for external access
-const API_BASE = import.meta.env?.VITE_API_URL || '';
+/**
+ * Base URL for resolving API paths. When `VITE_API_URL` is unset, use the page
+ * origin so `new URL('/api/...', base)` works with the Vite dev proxy (same
+ * origin → `/api` proxied to the mesh node). An empty string is **not** a valid
+ * `URL` base and throws "Invalid base URL".
+ */
+function resolveApiBase(): string {
+  const fromEnv = import.meta.env?.VITE_API_URL;
+  if (typeof fromEnv === 'string' && fromEnv.trim() !== '') {
+    return fromEnv;
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'http://localhost:12000';
+}
 
 // Simple Ed25519 implementation using Web Crypto
 // Note: In production, use a proper Ed25519 library like @noble/ed25519
@@ -44,6 +58,20 @@ export interface Post {
   liked_by_me?: boolean;
 }
 
+/**
+ * Renders `content.body` from the API. The node stores top-level text as a string;
+ * some code paths use `{ text: string }`.
+ */
+export function postBodyText(body: unknown): string {
+  if (body == null) return '';
+  if (typeof body === 'string') return body;
+  if (typeof body === 'object' && body !== null && 'text' in body) {
+    const t = (body as { text?: unknown }).text;
+    return typeof t === 'string' ? t : '';
+  }
+  return '';
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -58,6 +86,7 @@ export interface Group {
 const KEYS_STORAGE_KEY = 'mesh_keys';
 const TOKEN_STORAGE_KEY = 'mesh_token';
 const USER_STORAGE_KEY = 'mesh_user';
+const ENTITY_ID_STORAGE_KEY = 'mesh_entity_id';
 
 export function getStoredKeys(): KeyPair | null {
   if (typeof window === 'undefined') return null;
@@ -71,6 +100,19 @@ export function storeKeys(keys: KeyPair): void {
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
+  // Vault session is authoritative when present — legacy mesh_token must not shadow it
+  // or apiCall/createPost use a stale token while useAuth() uses relayToken.
+  const sessionRaw = localStorage.getItem('mesh_session');
+  if (sessionRaw) {
+    try {
+      const session = JSON.parse(sessionRaw) as { relayToken?: string };
+      if (typeof session.relayToken === 'string' && session.relayToken.length > 0) {
+        return session.relayToken;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
   return localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
@@ -80,8 +122,34 @@ export function storeToken(token: string): void {
 
 export function getStoredUser(): User | null {
   if (typeof window === 'undefined') return null;
+  const sessionRaw = localStorage.getItem('mesh_session');
+  if (sessionRaw) {
+    try {
+      const session = JSON.parse(sessionRaw) as {
+        user?: { entityId?: string; handle?: string; profile?: User['profile'] };
+      };
+      const u = session.user;
+      if (u?.entityId) {
+        return {
+          id: u.entityId,
+          handle: u.handle ?? null,
+          profile: u.profile ?? {},
+          public_key: '',
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+  }
   const stored = localStorage.getItem(USER_STORAGE_KEY);
-  return stored ? JSON.parse(stored) : null;
+  if (stored) {
+    try {
+      return JSON.parse(stored) as User;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export function storeUser(user: User): void {
@@ -91,6 +159,19 @@ export function storeUser(user: User): void {
 export function clearAuth(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(USER_STORAGE_KEY);
+}
+
+/** Dispatched when relay token is rejected; AuthProvider should clear session. */
+export const MESH_AUTH_INVALID_EVENT = 'mesh:auth-invalid';
+
+/** Clear vault + legacy auth storage and notify the app (e.g. stale or server-missing relay session). */
+export function invalidateClientAuth(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('mesh_session');
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(ENTITY_ID_STORAGE_KEY);
+  window.dispatchEvent(new Event(MESH_AUTH_INVALID_EVENT));
 }
 
 // Generate a random key pair (simplified - use proper Ed25519 in production)
@@ -142,7 +223,7 @@ export async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getStoredToken();
-  const url = new URL(endpoint, API_BASE);
+  const url = new URL(endpoint, resolveApiBase());
   
   if (token) {
     url.searchParams.set('token', token);
@@ -157,15 +238,43 @@ export async function apiCall<T>(
   });
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(error.detail || `API error: ${response.status}`);
+    const errBody = await response.text();
+    let msg = `API error: ${response.status}`;
+    const ct = response.headers.get('content-type') ?? '';
+    if (ct.includes('application/json') && errBody) {
+      try {
+        const error = JSON.parse(errBody) as { detail?: unknown; message?: string };
+        const d = error.detail;
+        if (typeof d === 'string') msg = d;
+        else if (Array.isArray(d)) {
+          const parts = d.map((e: unknown) =>
+            typeof e === 'object' && e !== null && 'msg' in e
+              ? String((e as { msg: string }).msg)
+              : JSON.stringify(e),
+          );
+          msg = parts.join('; ') || msg;
+        } else if (d != null) msg = String(d);
+        else if (error.message) msg = error.message;
+      } catch {
+        msg = errBody.slice(0, 300);
+      }
+    } else if (errBody) {
+      msg = errBody.replace(/\s+/g, ' ').trim().slice(0, 300);
+    }
+    if (
+      response.status === 401 &&
+      token &&
+      !endpoint.includes('/api/auth/challenge') &&
+      !endpoint.includes('/api/auth/verify')
+    ) {
+      invalidateClientAuth();
+      msg = 'Session expired. Please sign in again.';
+    }
+    throw new Error(msg);
   }
   
   return response.json();
 }
-
-// Store entity ID separately from keys
-const ENTITY_ID_STORAGE_KEY = 'mesh_entity_id';
 
 export function getStoredEntityId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -268,23 +377,26 @@ export async function updateProfile(profile: { name?: string; bio?: string; avat
 
 // Content API
 export async function createPost(
-  text: string, 
-  replyTo?: string, 
-  access: 'public' | 'friends' | 'private' = 'public',
-  media: string[] = []
+  text: string,
+  replyTo?: string,
+  access: 'public' | 'friends' | 'private' | 'group' = 'public',
+  media: string[] = [],
+  groupId?: string,
 ): Promise<{ id: string }> {
   const user = getStoredUser();
   if (!user) throw new Error('Not logged in');
-  
+
+  const effectiveAccess = groupId ? 'group' : access;
+
   return apiCall<{ id: string }>('/api/content', {
     method: 'POST',
     body: JSON.stringify({
-      author: user.id,
       kind: replyTo ? 'reply' : 'post',
       body: text,
       media,
       reply_to: replyTo,
-      access,
+      access: effectiveAccess,
+      group_id: groupId ?? null,
     }),
   });
 }
@@ -296,13 +408,15 @@ export async function getPost(postId: string): Promise<Post> {
 export async function getPosts(params: {
   author?: string;
   reply_to?: string;
+  group_id?: string;
   limit?: number;
 }): Promise<{ items: Post[]; total: number }> {
   const searchParams = new URLSearchParams();
   if (params.author) searchParams.set('author', params.author);
   if (params.reply_to) searchParams.set('reply_to', params.reply_to);
+  if (params.group_id) searchParams.set('group_id', params.group_id);
   if (params.limit) searchParams.set('limit', params.limit.toString());
-  
+
   return apiCall<{ items: Post[]; total: number }>(`/api/content?${searchParams}`);
 }
 
